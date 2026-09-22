@@ -1,6 +1,7 @@
 import type {
   CollectionMap,
   CollectionName,
+  AgendaConfig,
   LinkItem,
   Meta,
   Nota,
@@ -14,6 +15,7 @@ export function emptyCollections(): CollectionMap {
     pendencias: [],
     notas: [],
     links: [],
+    agenda: { embedUrl: "", icalUrl: "" },
     meta: { updatedAt: new Date().toISOString() },
   };
 }
@@ -44,6 +46,8 @@ function ensureCollection<K extends CollectionName>(
       return (Array.isArray(data) ? data.map(ensureNota) : []) as CollectionMap[K];
     case "links":
       return (Array.isArray(data) ? data.map(ensureLink) : []) as CollectionMap[K];
+    case "agenda":
+      return ensureAgenda(data) as CollectionMap[K];
     case "meta":
       return ensureMeta(data) as CollectionMap[K];
     default:
@@ -97,6 +101,14 @@ function ensureLink(x: unknown): LinkItem {
     categoria: cats.includes(rawCat as (typeof cats)[number])
       ? (rawCat as LinkItem["categoria"])
       : "gerais",
+  };
+}
+
+function ensureAgenda(x: unknown): AgendaConfig {
+  const o = (x ?? {}) as Partial<AgendaConfig>;
+  return {
+    embedUrl: String(o.embedUrl ?? ""),
+    icalUrl: String(o.icalUrl ?? ""),
   };
 }
 

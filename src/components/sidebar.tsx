@@ -6,6 +6,7 @@ import { useAuth } from "./auth-provider";
 import { useEffect, useState } from "react";
 
 const NAV = [
+  { href: "/home/", label: "Home", icon: "🏠" },
   { href: "/prioridades/", label: "Prioridades", icon: "📌" },
   { href: "/pendencias/", label: "Pendências", icon: "🗂️" },
   { href: "/notas/", label: "Notas", icon: "📝" },

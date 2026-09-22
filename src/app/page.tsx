@@ -10,7 +10,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!ready) return;
-    router.replace(token ? "/prioridades/" : "/login/");
+    router.replace(token ? "/home/" : "/login/");
   }, [ready, token, router]);
 
   return (

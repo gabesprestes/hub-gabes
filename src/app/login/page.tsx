@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (ready && token) router.replace("/prioridades/");
+    if (ready && token) router.replace("/home/");
   }, [ready, token, router]);
 
   async function onSubmit(e: FormEvent) {
@@ -22,7 +22,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(value);
-      router.replace("/prioridades/");
+      router.replace("/home/");
     } catch {
       setError("Token inválido. Use um Personal Access Token com scope gist.");
     } finally {

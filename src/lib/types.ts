@@ -40,11 +40,17 @@ export interface Meta {
   owner?: string;
 }
 
+export interface AgendaConfig {
+  embedUrl: string;
+  icalUrl: string;
+}
+
 export type CollectionMap = {
   prioridades: Prioridade[];
   pendencias: Pendencia[];
   notas: Nota[];
   links: LinkItem[];
+  agenda: AgendaConfig;
   meta: Meta;
 };
 
@@ -55,6 +61,7 @@ export const COLLECTION_FILES: Record<CollectionName, string> = {
   pendencias: "pendencias.json",
   notas: "notas.json",
   links: "links.json",
+  agenda: "agenda.json",
   meta: "meta.json",
 };
 
