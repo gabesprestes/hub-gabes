@@ -4,7 +4,7 @@ export const GIST_DESCRIPTION = "Hub Gabes — personal workspace";
 export type PriorityLevel = "alta" | "media" | "baixa";
 export type PendenciaStatus = "pendente" | "andamento" | "concluido";
 export type PendenciaCategoria = "lideranca" | "quality" | "csat" | "pessoal";
-export type LinkCategoria = "gerais" | "quality" | "csat" | "relatorios";
+export type LinkCategoria = "gerais" | "quality" | "csat" | "projetos";
 
 export interface Prioridade {
   id: string;
@@ -32,6 +32,7 @@ export interface LinkItem {
   label: string;
   url: string;
   categoria: LinkCategoria;
+  note?: string;
 }
 
 export interface Meta {
@@ -68,5 +69,5 @@ export const LINK_CATEGORIAS: { key: LinkCategoria; label: string }[] = [
   { key: "gerais", label: "Links gerais" },
   { key: "quality", label: "Quality" },
   { key: "csat", label: "CSAT" },
-  { key: "relatorios", label: "Relatórios" },
+  { key: "projetos", label: "Projetos" },
 ];

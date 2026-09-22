@@ -87,13 +87,15 @@ function ensureNota(x: unknown): Nota {
 
 function ensureLink(x: unknown): LinkItem {
   const o = (x ?? {}) as Partial<LinkItem>;
-  const cats = ["gerais", "quality", "csat", "relatorios"] as const;
+  const rawCat = String(o.categoria) === "relatorios" ? "projetos" : o.categoria;
+  const cats = ["gerais", "quality", "csat", "projetos"] as const;
   return {
     id: String(o.id ?? uid()),
     label: String(o.label ?? ""),
     url: String(o.url ?? ""),
-    categoria: cats.includes(o.categoria as (typeof cats)[number])
-      ? (o.categoria as LinkItem["categoria"])
+    note: o.note ? String(o.note) : undefined,
+    categoria: cats.includes(rawCat as (typeof cats)[number])
+      ? (rawCat as LinkItem["categoria"])
       : "gerais",
   };
 }
