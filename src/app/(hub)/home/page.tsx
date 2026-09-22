@@ -11,7 +11,7 @@ import {
   weekRange,
   type HourCategory,
 } from "@/lib/calendar";
-import { emptyReminders } from "@/lib/types";
+import { uid } from "@/lib/schema";
 import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
 
 const CARDS: { key: HourCategory; label: string; hint: string }[] = [
@@ -189,8 +189,8 @@ export default function AgendaHomePage() {
         {CARDS.map((card) => (
           <div key={card.key} className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
             <div className="text-[13px] font-semibold text-[var(--muted)]">{card.label}</div>
-            <div className="mt-2 text-[28px] font-bold tracking-tight text-[var(--purple)]">
-              {hoursLoading ? "…" : hours ? formatHours(hours[card.key]) : "—"}
+            <div className="mt-2 font-mono text-[32px] font-bold tabular-nums tracking-tight text-[var(--text)]">
+              {hoursLoading ? "…" : formatHours(hours?.[card.key] ?? 0)}
             </div>
             <div className="mt-1 text-[12px] text-[var(--muted)]">{card.hint}</div>
           </div>
@@ -210,7 +210,7 @@ export default function AgendaHomePage() {
       ) : null}
       </div>
       <ReminderColumn
-        reminders={data.reminders?.length ? data.reminders : emptyReminders()}
+        reminders={data.reminders ?? []}
         onSave={(reminders) => void save({ ...data, reminders })}
       />
       </div>
@@ -231,12 +231,30 @@ function ReminderColumn({
     setDrafts(reminders.map((item) => item.text));
   }, [reminders]);
 
+  function add() {
+    onSave([...reminders, { id: uid(), text: "", updatedAt: "" }]);
+  }
+
+  function remove(id: string) {
+    onSave(reminders.filter((item) => item.id !== id));
+  }
+
   return (
     <aside>
-      <h2 className="mb-2 text-[13px] font-bold text-[var(--muted)]">Lembretes do dia</h2>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h2 className="m-0 text-[13px] font-bold text-[var(--muted)]">Lembretes</h2>
+        <button
+          type="button"
+          onClick={add}
+          aria-label="Novo lembrete"
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-[rgba(138,5,190,0.35)] bg-white text-[16px] leading-none text-[var(--purple)] hover:bg-[var(--purple-tint)]"
+        >
+          +
+        </button>
+      </div>
       <div className="grid gap-2">
         {reminders.map((item, index) => (
-          <label key={item.id} className="block rounded-xl border border-[rgba(138,5,190,0.18)] bg-[rgba(243,232,251,0.85)] p-2.5">
+          <div key={item.id} className="rounded-xl border border-[rgba(138,5,190,0.18)] bg-[rgba(243,232,251,0.85)] p-2.5">
             <textarea
               value={drafts[index] ?? ""}
               onChange={(e) => {
@@ -257,10 +275,15 @@ function ReminderColumn({
               placeholder="Lembrete"
               className="min-h-16 w-full resize-none bg-transparent text-[13px] outline-none"
             />
-            <div className="text-[10px] text-[var(--muted)]">
-              {item.updatedAt ? new Date(item.updatedAt).toLocaleString("pt-BR") : "Sem edição"}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-[var(--muted)]">
+                {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString("pt-BR") : ""}
+              </span>
+              <button type="button" onClick={() => remove(item.id)} className="text-[11px] text-[var(--muted)] hover:text-[var(--red)]">
+                Apagar
+              </button>
             </div>
-          </label>
+          </div>
         ))}
       </div>
     </aside>

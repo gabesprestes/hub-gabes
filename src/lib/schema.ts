@@ -143,27 +143,33 @@ function ensureAgenda(x: unknown): AgendaConfig {
 }
 
 function ensureReminders(value: AgendaConfig["reminders"] | undefined) {
-  const base = emptyReminders();
-  if (!Array.isArray(value)) return base;
-  return base.map((item, index) => {
-    const current = value[index];
-    if (!current) return item;
-    return {
-      id: String(current.id || item.id),
-      text: String(current.text ?? ""),
-      updatedAt: String(current.updatedAt ?? ""),
-    };
-  });
+  if (!Array.isArray(value) || value.length === 0) return emptyReminders();
+  const items = value.map((current, index) => ({
+    id: String(current?.id || `reminder-${index + 1}`),
+    text: String(current?.text ?? ""),
+    updatedAt: String(current?.updatedAt ?? ""),
+  }));
+  const legacyBlank = items.length === 6 && items.every((item) => !item.text && !item.updatedAt);
+  if (legacyBlank) return emptyReminders();
+  return items;
 }
 
 function ensureBoard(x: unknown): BoardCard {
-  const o = (x ?? {}) as Partial<BoardCard>;
-  const columns = ["backlog", "andamento", "pausado", "concluido", "destaque"] as const;
+  const o = (x ?? {}) as Partial<BoardCard> & { column?: string };
+  const columns = ["backlog", "andamento", "pausado", "concluido"] as const;
+  const categories = ["quality", "csat", "lideranca", "extra", "pessoal"] as const;
+  const rawColumn = String((x as { column?: string } | null)?.column ?? "");
+  const column = rawColumn === "destaque" ? "backlog" : rawColumn;
   return {
     id: String(o.id ?? uid()),
     title: String(o.title ?? ""),
     detail: String(o.detail ?? ""),
-    column: columns.includes(o.column as (typeof columns)[number]) ? (o.column as BoardCard["column"]) : "backlog",
+    category: categories.includes(o.category as (typeof categories)[number])
+      ? (o.category as BoardCard["category"])
+      : "quality",
+    deadline: String(o.deadline ?? ""),
+    startedAt: String(o.startedAt ?? ""),
+    column: columns.includes(column as (typeof columns)[number]) ? (column as BoardCard["column"]) : "backlog",
     doneAt: String(o.doneAt ?? ""),
   };
 }

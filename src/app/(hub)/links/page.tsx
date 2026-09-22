@@ -5,6 +5,7 @@ import { useCollection } from "@/hooks/use-collection";
 import { SEED_LINKS } from "@/lib/seed-links";
 import { uid } from "@/lib/schema";
 import { LINK_CATEGORIAS, type LinkCategoria, type LinkItem } from "@/lib/types";
+import { LinkMark } from "@/components/link-mark";
 import {
   Empty,
   Field,
@@ -13,15 +14,6 @@ import {
   PrimaryButton,
   inputClass,
 } from "@/components/ui";
-
-function initials(label: string) {
-  const words = label
-    .replace(/[[\]()]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 1 && !/^(de|da|do|e|por|-)$/i.test(w));
-  const letters = words.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "");
-  return (letters.join("") || label.slice(0, 2)).slice(0, 2).toUpperCase();
-}
 
 export default function LinksPage() {
   const { data, save, loading, saving, error } = useCollection("links");
@@ -166,24 +158,24 @@ export default function LinksPage() {
             {cat.items.length === 0 ? (
               <Empty>Nenhum link em {cat.label}.</Empty>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                 {cat.items.map((item) => (
                   <div key={item.id} className="group relative">
                     <a
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex min-h-[112px] flex-col rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[rgba(138,5,190,0.35)] hover:shadow-md"
+                      className="flex min-h-[58px] flex-col rounded-xl border border-[var(--border)] bg-white p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-[rgba(138,5,190,0.35)] hover:shadow-md"
                     >
-                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--purple-tint)] text-[12px] font-bold text-[var(--purple)]">
-                        {initials(item.label)}
+                      <div className="mb-1.5">
+                        <LinkMark url={item.url} label={item.label} />
                       </div>
-                      <div className="pr-6 text-[14px] font-semibold leading-snug">{item.label}</div>
+                      <div className="pr-5 text-[12px] font-semibold leading-snug">{item.label}</div>
                       {item.note ? (
-                        <div className="mt-1 line-clamp-2 text-[12px] text-[var(--muted)]">{item.note}</div>
+                        <div className="mt-0.5 line-clamp-2 text-[10px] text-[var(--muted)]">{item.note}</div>
                       ) : null}
-                      <div className="mt-auto pt-3">
-                        <span className="inline-block rounded-full bg-[var(--purple-tint)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--purple)]">
+                      <div className="mt-auto pt-1.5">
+                        <span className="inline-block rounded-full bg-[var(--purple-tint)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--purple)]">
                           {cat.label}
                         </span>
                       </div>

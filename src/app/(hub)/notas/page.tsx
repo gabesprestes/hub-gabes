@@ -5,11 +5,13 @@ import { uid } from "@/lib/schema";
 
 const TONES = [
   "bg-[rgba(243,232,251,0.92)]",
-  "bg-[rgba(232,210,245,0.7)]",
-  "bg-[rgba(250,245,252,0.95)]",
-  "bg-[rgba(214,176,236,0.45)]",
-  "bg-[rgba(255,250,252,0.9)]",
-  "bg-[rgba(186,140,220,0.28)]",
+  "bg-[rgba(255,255,255,0.96)]",
+  "bg-[rgba(255,244,204,0.92)]",
+  "bg-[rgba(214,242,224,0.92)]",
+  "bg-[rgba(214,232,252,0.92)]",
+  "bg-[rgba(255,228,204,0.92)]",
+  "bg-[rgba(252,214,218,0.92)]",
+  "bg-[rgba(252,220,232,0.92)]",
 ];
 
 export default function NotasPage() {
@@ -33,7 +35,7 @@ export default function NotasPage() {
       {error ? <p className="mb-3 text-sm text-[var(--red)]">{error}</p> : null}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
         {data.map((note) => (
-          <article key={note.id} className={`min-h-36 rounded-xl border border-[rgba(138,5,190,0.15)] p-3 ${TONES[note.color % TONES.length]}`}>
+          <article key={note.id} className={`min-h-36 rounded-xl border border-black/10 p-3 ${TONES[note.color % TONES.length]}`}>
             <input
               value={note.title}
               onChange={(e) => void save(data.map((item) => (item.id === note.id ? { ...item, title: e.target.value } : item)))}

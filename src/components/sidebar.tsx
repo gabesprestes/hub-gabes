@@ -175,10 +175,11 @@ export function Sidebar() {
                 <Link
                   key={person.slug}
                   href={href}
-                  className={`rounded-lg py-1.5 pl-8 pr-3 text-[13px] ${
+                  className={`flex items-center gap-2 rounded-lg py-1.5 pl-6 pr-3 text-[13px] ${
                     active ? "bg-[var(--purple-tint)] font-bold text-[var(--purple)]" : "text-[var(--muted)] hover:bg-[var(--purple-tint)]"
                   }`}
                 >
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#4a0368]" />
                   {person.name}
                 </Link>
               );

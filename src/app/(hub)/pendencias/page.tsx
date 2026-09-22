@@ -11,7 +11,17 @@ import {
   type PendenciaStatus,
   type PriorityLevel,
 } from "@/lib/types";
-import { Empty, PrimaryButton, inputClass } from "@/components/ui";
+import { inputClass } from "@/components/ui";
+
+const BOX: Record<PendenciaCategoria, string> = {
+  lideranca: "bg-[#f3e8fb]",
+  quality: "bg-[#e7f2fc]",
+  csat: "bg-[#e5f6ee]",
+  extra: "bg-[#fde8d4]",
+  pessoal: "bg-[#fff6d6]",
+};
+
+const PRIORITY_RANK: Record<PriorityLevel, number> = { alta: 0, media: 1, baixa: 2 };
 
 export default function PendenciasPage() {
   const { data, save, error } = useCollection("pendencias");
@@ -37,6 +47,10 @@ export default function PendenciasPage() {
     );
   }
 
+  function remove(id: string) {
+    void save(data.filter((item) => item.id !== id));
+  }
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -55,52 +69,67 @@ export default function PendenciasPage() {
       {error ? <p className="mb-3 text-sm text-[var(--red)]">{error}</p> : null}
 
       {PENDENCIA_CATEGORIAS.map((categoria) => {
-        const items = visible.filter((item) => item.categoria === categoria.key);
+        const items = visible
+          .filter((item) => item.categoria === categoria.key)
+          .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
         return (
-          <section key={categoria.key} className="mb-6 rounded-2xl border border-[var(--border)] bg-white p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="m-0 text-[16px] font-bold">{categoria.label}</h2>
-              <PrimaryButton onClick={() => add(categoria.key)}>+ Nova pendência</PrimaryButton>
+          <section key={categoria.key} className={`mb-5 rounded-2xl p-3 ${BOX[categoria.key]}`}>
+            <div className="mb-2 flex items-center justify-between px-1">
+              <h2 className="m-0 text-[15px] font-bold">{categoria.label}</h2>
+              <button
+                type="button"
+                onClick={() => add(categoria.key)}
+                className="rounded-md bg-white/70 px-2 py-1 text-[12px] font-semibold text-[var(--text)] hover:bg-white"
+              >
+                + Atividade
+              </button>
             </div>
-            {items.length === 0 ? (
-              <Empty>Nenhuma pendência em {categoria.label}.</Empty>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {items.map((item) => (
-                  <article key={item.id} className={`rounded-xl border px-3 py-3 ${isLate(item) ? "border-[var(--red)]" : "border-[var(--border)]"}`}>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <PriorityPill value={item.priority} onChange={(priority) => patch(item.id, { priority })} />
-                      {isLate(item) ? <span className="rounded-full bg-[rgba(209,49,76,0.12)] px-2 py-0.5 text-[10px] font-bold text-[var(--red)]">ATRASADA</span> : null}
-                      {isLate(item) && item.due ? <span className="text-[12px] text-[var(--muted)]">Venceu em {formatDate(item.due)}</span> : null}
-                    </div>
-                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_160px_140px]">
-                      <input
-                        value={item.text}
-                        onChange={(e) => patch(item.id, { text: e.target.value })}
-                        placeholder="Nome da atividade"
-                        className="bg-transparent text-[14px] font-semibold outline-none"
-                      />
-                      <select
-                        value={item.status}
-                        onChange={(e) => patch(item.id, { status: e.target.value as PendenciaStatus })}
-                        className={inputClass}
-                      >
-                        {PENDENCIA_STATUS.map((status) => (
-                          <option key={status.key} value={status.key}>{status.label}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="date"
-                        value={item.due}
-                        onChange={(e) => patch(item.id, { due: e.target.value })}
-                        className={inputClass}
-                      />
-                    </div>
-                    {item.doneAt ? <p className="mt-2 text-[12px] font-semibold text-[var(--purple)]">Concluído em {item.doneAt}</p> : null}
-                  </article>
-                ))}
-              </div>
-            )}
+            <div className="overflow-hidden rounded-xl bg-white/75">
+              {items.length === 0 ? (
+                <p className="m-0 px-3 py-2 text-[12px] text-[var(--muted)]">Nenhuma atividade.</p>
+              ) : (
+                items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 border-b border-black/5 px-2 py-1 last:border-b-0">
+                    <PriorityPill value={item.priority} onChange={(priority) => patch(item.id, { priority })} />
+                    {isLate(item) ? (
+                      <span className="shrink-0 rounded-full bg-[rgba(209,49,76,0.12)] px-1.5 py-px text-[10px] font-bold uppercase text-[var(--red)]">
+                        Atrasada
+                      </span>
+                    ) : null}
+                    <input
+                      value={item.text}
+                      onChange={(e) => patch(item.id, { text: e.target.value })}
+                      placeholder="Nome da atividade"
+                      className="h-7 min-w-0 flex-1 bg-transparent text-[13px] outline-none"
+                    />
+                    <select
+                      value={item.status}
+                      onChange={(e) => patch(item.id, { status: e.target.value as PendenciaStatus })}
+                      className="h-7 w-[108px] shrink-0 rounded-md border border-black/10 bg-white px-1 text-[11px] outline-none"
+                    >
+                      {PENDENCIA_STATUS.map((status) => (
+                        <option key={status.key} value={status.key}>{status.label}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={item.due}
+                      onChange={(e) => patch(item.id, { due: e.target.value })}
+                      className="h-7 w-[132px] shrink-0 rounded-md border border-black/10 bg-white px-1 text-[11px] outline-none"
+                    />
+                    {item.doneAt ? <span className="shrink-0 text-[10px] font-semibold text-[#1d6b45]">{item.doneAt}</span> : null}
+                    <button
+                      type="button"
+                      aria-label="Excluir atividade"
+                      onClick={() => remove(item.id)}
+                      className="shrink-0 px-1 text-[14px] leading-none text-[var(--muted)] hover:text-[var(--red)]"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </section>
         );
       })}
@@ -111,11 +140,17 @@ export default function PendenciasPage() {
 function PriorityPill({ value, onChange }: { value: PriorityLevel; onChange: (value: PriorityLevel) => void }) {
   const next: Record<PriorityLevel, PriorityLevel> = { alta: "media", media: "baixa", baixa: "alta" };
   const label = value === "alta" ? "Alta" : value === "baixa" ? "Baixa" : "Média";
+  const tone =
+    value === "alta"
+      ? "bg-[#f8d0d6] text-[#c4233c]"
+      : value === "baixa"
+        ? "bg-[#d4f0e0] text-[#1a7a4c]"
+        : "bg-[#f8e7b0] text-[#8a6a10]";
   return (
     <button
       type="button"
       onClick={() => onChange(next[value])}
-      className="rounded-full bg-[var(--purple-tint)] px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--purple)]"
+      className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold uppercase ${tone}`}
     >
       {label}
     </button>
@@ -130,10 +165,4 @@ function isLate(item: Pendencia) {
 
 function today() {
   return new Date().toLocaleDateString("pt-BR");
-}
-
-function formatDate(iso: string) {
-  const [year, month, day] = iso.split("-");
-  if (!day) return iso;
-  return `${day}/${month}/${year}`;
 }

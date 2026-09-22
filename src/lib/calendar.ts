@@ -173,11 +173,10 @@ function sameDay(a: Date, b: Date) {
 }
 
 export function formatHours(hours: number) {
-  const minutes = Math.round(hours * 60);
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${String(m).padStart(2, "0")}min`;
+  const total = Math.max(0, Math.round(hours * 60));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}`;
 }
 
 export function parseIcs(raw: string): CalendarEvent[] {

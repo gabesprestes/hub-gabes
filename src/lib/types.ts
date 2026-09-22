@@ -5,7 +5,8 @@ export type PriorityLevel = "alta" | "media" | "baixa";
 export type PendenciaStatus = "pending" | "delayed" | "done" | "cancelled" | "ongoing" | "paused";
 export type PendenciaCategoria = "lideranca" | "quality" | "csat" | "extra" | "pessoal";
 export type LinkCategoria = "gerais" | "quality" | "csat" | "projetos";
-export type BoardColumn = "backlog" | "andamento" | "pausado" | "concluido" | "destaque";
+export type BoardColumn = "backlog" | "andamento" | "pausado" | "concluido";
+export type ProjectCategory = "quality" | "csat" | "lideranca" | "extra" | "pessoal";
 
 export interface Prioridade {
   id: string;
@@ -49,6 +50,9 @@ export interface BoardCard {
   id: string;
   title: string;
   detail: string;
+  category: ProjectCategory;
+  deadline: string;
+  startedAt: string;
   column: BoardColumn;
   doneAt: string;
 }
@@ -127,7 +131,23 @@ export const BOARD_COLUMNS: { key: BoardColumn; label: string }[] = [
   { key: "andamento", label: "Em andamento" },
   { key: "pausado", label: "Pausado" },
   { key: "concluido", label: "Concluído" },
-  { key: "destaque", label: "Destaque" },
+];
+
+export const PROJECT_CATEGORIES: { key: ProjectCategory; label: string }[] = [
+  { key: "quality", label: "Quality" },
+  { key: "csat", label: "CSAT" },
+  { key: "lideranca", label: "Liderança" },
+  { key: "extra", label: "Projetos Extra" },
+  { key: "pessoal", label: "Pessoal" },
+];
+
+export const FREQUENCIAS: { key: string; label: string; color: string }[] = [
+  { key: "diaria", label: "Diária", color: "#d1314c" },
+  { key: "semanal", label: "Semanal", color: "#e06a1f" },
+  { key: "quinzenal", label: "Quinzenal", color: "#b8860b" },
+  { key: "mensal", label: "Mensal", color: "#1f9d63" },
+  { key: "bimensal", label: "Bi-Mensal", color: "#2b6cb0" },
+  { key: "semestral", label: "Semestral", color: "#8a05be" },
 ];
 
 export const MONTHS = [
@@ -171,9 +191,5 @@ export function emptyAnalyst(): AnalystNote {
 }
 
 export function emptyReminders(): Reminder[] {
-  return Array.from({ length: 6 }, (_, index) => ({
-    id: `reminder-${index + 1}`,
-    text: "",
-    updatedAt: "",
-  }));
+  return [{ id: "reminder-1", text: "", updatedAt: "" }];
 }
