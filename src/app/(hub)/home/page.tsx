@@ -13,9 +13,9 @@ import {
 import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
 
 const CARDS: { key: HourCategory; label: string; hint: string }[] = [
-  { key: "oneOnOne", label: "1:1", hint: "Título com 1:1" },
-  { key: "projetos", label: "Projetos", hint: "Título com projeto" },
-  { key: "focus", label: "Focus time", hint: "Título com focus ou foco" },
+  { key: "oneOnOne", label: "1:1", hint: "Começa com 1:1 e cita um analista" },
+  { key: "projetos", label: "Projetos", hint: "Recorrente na cor Grafite" },
+  { key: "focus", label: "Focus time", hint: "Cor padrão da agenda" },
 ];
 
 export default function AgendaHomePage() {
@@ -24,6 +24,7 @@ export default function AgendaHomePage() {
   const [icalInput, setIcalInput] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [hours, setHours] = useState<Record<HourCategory, number> | null>(null);
+  const [colorsFound, setColorsFound] = useState(true);
   const [hoursError, setHoursError] = useState<string | null>(null);
   const [hoursLoading, setHoursLoading] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
@@ -55,7 +56,9 @@ export default function AgendaHomePage() {
       })
       .then((text) => {
         if (cancelled) return;
-        setHours(hoursByCategory(parseIcs(text)));
+        const result = hoursByCategory(parseIcs(text));
+        setHours(result.totals);
+        setColorsFound(result.colorsFound);
       })
       .catch(() => {
         if (cancelled) return;
@@ -191,6 +194,11 @@ export default function AgendaHomePage() {
       </div>
 
       {hoursError ? <p className="mt-3 text-[13px] text-[var(--muted)]">{hoursError}</p> : null}
+      {hours && !colorsFound ? (
+        <p className="mt-3 text-[13px] text-[var(--muted)]">
+          O 1:1 entra pelo título. O arquivo da agenda não traz a cor do evento, então Projetos e Focus time ficam sem soma até o Google informar Grafite e a cor padrão.
+        </p>
+      ) : null}
       {!data.icalUrl && embed ? (
         <p className="mt-3 text-[13px] text-[var(--muted)]">
           Cole o endereço secreto iCal em Conectar para somar 1:1, Projetos e Focus time.
