@@ -58,7 +58,21 @@ export function weekRange(now = new Date()) {
   return { start, end };
 }
 
+const PROJETOS = [
+  "cross bu - monthly",
+  "wr - reassessment id",
+  "fraud ops leadership weekly",
+  "bci working group",
+  "ritual de rdrs procedentes",
+  "quality/csat planning",
+];
+
+const FOCUS = ["focus time", "pendencias quality", "pendencias csat"];
+
 export function categorize(event: CalendarEvent): HourCategory | null {
+  const text = normalize(event.title);
+  if (PROJETOS.some((name) => text.includes(name))) return "projetos";
+  if (FOCUS.some((name) => text.includes(name))) return "focus";
   if (isOneOnOne(event.title)) return "oneOnOne";
   if (event.color === "unknown") return null;
   if (event.recurring && event.color === "dark") return "projetos";
@@ -67,9 +81,17 @@ export function categorize(event: CalendarEvent): HourCategory | null {
 }
 
 function isOneOnOne(title: string) {
-  if (!/^\s*1\s*:\s*1\b/i.test(title)) return false;
-  const text = title.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-  return ANALYSTS.some((name) => new RegExp(`\\b${name}\\b`, "i").test(text));
+  const starts = /^\s*1\s*:\s*1\b/i.test(title);
+  const text = normalize(title);
+  const named = ANALYSTS.some((name) => new RegExp(`\\b${name}\\b`, "i").test(text));
+  return starts || named;
+}
+
+function normalize(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 export function hoursByCategory(events: CalendarEvent[], now = new Date()) {

@@ -13,9 +13,9 @@ import {
 import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
 
 const CARDS: { key: HourCategory; label: string; hint: string }[] = [
-  { key: "oneOnOne", label: "1:1", hint: "Começa com 1:1 e cita um analista" },
-  { key: "projetos", label: "Projetos", hint: "Recorrente na cor Grafite" },
-  { key: "focus", label: "Focus time", hint: "Cor padrão da agenda" },
+  { key: "oneOnOne", label: "1:1", hint: "Começa com 1:1 ou cita um analista" },
+  { key: "projetos", label: "Projetos", hint: "Rituais recorrentes, cor Grafite" },
+  { key: "focus", label: "Focus time", hint: "Cor padrão, focus e pendências" },
 ];
 
 export default function AgendaHomePage() {
@@ -87,7 +87,7 @@ export default function AgendaHomePage() {
       return;
     }
     setFormError(null);
-    await save({ embedUrl: nextEmbed ?? "", icalUrl: ical });
+    await save({ embedUrl: nextEmbed ?? "", icalUrl: ical, photo: data.photo ?? "" });
     setShowSetup(false);
   }
 
@@ -196,7 +196,7 @@ export default function AgendaHomePage() {
       {hoursError ? <p className="mt-3 text-[13px] text-[var(--muted)]">{hoursError}</p> : null}
       {hours && !colorsFound ? (
         <p className="mt-3 text-[13px] text-[var(--muted)]">
-          O 1:1 entra pelo título. O arquivo da agenda não traz a cor do evento, então Projetos e Focus time ficam sem soma até o Google informar Grafite e a cor padrão.
+          1:1, projetos e focus time entram pelo título do evento. A cor Grafite e a cor padrão só somam quando o arquivo da agenda informar a cor.
         </p>
       ) : null}
       {!data.icalUrl && embed ? (

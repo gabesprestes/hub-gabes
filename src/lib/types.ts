@@ -43,6 +43,7 @@ export interface Meta {
 export interface AgendaConfig {
   embedUrl: string;
   icalUrl: string;
+  photo: string;
 }
 
 export type CollectionMap = {

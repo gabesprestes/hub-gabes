@@ -15,7 +15,7 @@ export function emptyCollections(): CollectionMap {
     pendencias: [],
     notas: [],
     links: [],
-    agenda: { embedUrl: "", icalUrl: "" },
+    agenda: { embedUrl: "", icalUrl: "", photo: "" },
     meta: { updatedAt: new Date().toISOString() },
   };
 }
@@ -109,6 +109,7 @@ function ensureAgenda(x: unknown): AgendaConfig {
   return {
     embedUrl: String(o.embedUrl ?? ""),
     icalUrl: String(o.icalUrl ?? ""),
+    photo: String(o.photo ?? ""),
   };
 }
 
