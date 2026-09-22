@@ -44,6 +44,7 @@ export function toWeekEmbed(input: string): string | null {
   parsed.searchParams.set("showPrint", "0");
   parsed.searchParams.set("showTabs", "0");
   parsed.searchParams.set("showCalendars", "0");
+  parsed.searchParams.set("color", "#8a05be");
   return parsed.toString();
 }
 

@@ -1,13 +1,20 @@
 import type {
+  AgendaConfig,
+  AnalystNote,
+  BoardCard,
   CollectionMap,
   CollectionName,
-  AgendaConfig,
+  Entrega,
   LinkItem,
   Meta,
   Nota,
   Pendencia,
+  PendenciaCategoria,
+  PendenciaStatus,
   Prioridade,
+  PriorityLevel,
 } from "./types";
+import { emptyAnalyst, emptyChecks, emptyReminders, ANALYSTS } from "./types";
 
 export function emptyCollections(): CollectionMap {
   return {
@@ -15,7 +22,10 @@ export function emptyCollections(): CollectionMap {
     pendencias: [],
     notas: [],
     links: [],
-    agenda: { embedUrl: "", icalUrl: "", photo: "" },
+    agenda: { embedUrl: "", icalUrl: "", photo: "", reminders: emptyReminders() },
+    board: [],
+    entregas: [],
+    analistas: Object.fromEntries(ANALYSTS.map((person) => [person.slug, emptyAnalyst()])),
     meta: { updatedAt: new Date().toISOString() },
   };
 }
@@ -48,6 +58,12 @@ function ensureCollection<K extends CollectionName>(
       return (Array.isArray(data) ? data.map(ensureLink) : []) as CollectionMap[K];
     case "agenda":
       return ensureAgenda(data) as CollectionMap[K];
+    case "board":
+      return (Array.isArray(data) ? data.map(ensureBoard) : []) as CollectionMap[K];
+    case "entregas":
+      return (Array.isArray(data) ? data.map(ensureEntrega) : []) as CollectionMap[K];
+    case "analistas":
+      return ensureAnalistas(data) as CollectionMap[K];
     case "meta":
       return ensureMeta(data) as CollectionMap[K];
     default:
@@ -66,17 +82,28 @@ function ensurePrioridade(x: unknown): Prioridade {
 }
 
 function ensurePendencia(x: unknown): Pendencia {
-  const o = (x ?? {}) as Partial<Pendencia>;
-  const cats = ["lideranca", "quality", "csat", "pessoal"] as const;
+  const o = (x ?? {}) as Partial<Pendencia> & { status?: string; categoria?: string };
+  const cats: PendenciaCategoria[] = ["lideranca", "quality", "csat", "extra", "pessoal"];
+  const statusMap: Record<string, PendenciaStatus> = {
+    pendente: "pending",
+    andamento: "ongoing",
+    concluido: "done",
+    pending: "pending",
+    delayed: "delayed",
+    done: "done",
+    cancelled: "cancelled",
+    ongoing: "ongoing",
+    paused: "paused",
+  };
+  const priority: PriorityLevel = o.priority === "alta" || o.priority === "baixa" ? o.priority : "media";
   return {
     id: String(o.id ?? uid()),
     text: String(o.text ?? ""),
-    status:
-      o.status === "andamento" || o.status === "concluido" ? o.status : "pendente",
+    status: statusMap[String(o.status)] ?? "pending",
     due: String(o.due ?? ""),
-    categoria: cats.includes(o.categoria as (typeof cats)[number])
-      ? (o.categoria as Pendencia["categoria"])
-      : "pessoal",
+    doneAt: String(o.doneAt ?? ""),
+    priority,
+    categoria: cats.includes(o.categoria as PendenciaCategoria) ? (o.categoria as PendenciaCategoria) : "pessoal",
   };
 }
 
@@ -86,6 +113,7 @@ function ensureNota(x: unknown): Nota {
     id: String(o.id ?? uid()),
     title: String(o.title ?? "(sem título)"),
     text: String(o.text ?? ""),
+    color: Number.isInteger(o.color) ? Number(o.color) : 0,
   };
 }
 
@@ -110,7 +138,62 @@ function ensureAgenda(x: unknown): AgendaConfig {
     embedUrl: String(o.embedUrl ?? ""),
     icalUrl: String(o.icalUrl ?? ""),
     photo: String(o.photo ?? ""),
+    reminders: ensureReminders(o.reminders),
   };
+}
+
+function ensureReminders(value: AgendaConfig["reminders"] | undefined) {
+  const base = emptyReminders();
+  if (!Array.isArray(value)) return base;
+  return base.map((item, index) => {
+    const current = value[index];
+    if (!current) return item;
+    return {
+      id: String(current.id || item.id),
+      text: String(current.text ?? ""),
+      updatedAt: String(current.updatedAt ?? ""),
+    };
+  });
+}
+
+function ensureBoard(x: unknown): BoardCard {
+  const o = (x ?? {}) as Partial<BoardCard>;
+  const columns = ["backlog", "andamento", "pausado", "concluido", "destaque"] as const;
+  return {
+    id: String(o.id ?? uid()),
+    title: String(o.title ?? ""),
+    detail: String(o.detail ?? ""),
+    column: columns.includes(o.column as (typeof columns)[number]) ? (o.column as BoardCard["column"]) : "backlog",
+    doneAt: String(o.doneAt ?? ""),
+  };
+}
+
+function ensureEntrega(x: unknown): Entrega {
+  const o = (x ?? {}) as Partial<Entrega>;
+  return {
+    id: String(o.id ?? uid()),
+    description: String(o.description ?? ""),
+    frequencia: String(o.frequencia ?? ""),
+    checks: { ...emptyChecks(), ...(o.checks ?? {}) },
+  };
+}
+
+function ensureAnalistas(value: unknown): Record<string, AnalystNote> {
+  const source = (value ?? {}) as Record<string, Partial<AnalystNote>>;
+  return Object.fromEntries(
+    ANALYSTS.map((person) => {
+      const note = source[person.slug] ?? {};
+      return [
+        person.slug,
+        {
+          link: String(note.link ?? ""),
+          notes: String(note.notes ?? ""),
+          mentions: String(note.mentions ?? ""),
+          feedback: String(note.feedback ?? ""),
+        },
+      ];
+    }),
+  );
 }
 
 function ensureMeta(x: unknown): Meta {

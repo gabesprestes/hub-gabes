@@ -5,156 +5,135 @@ import { useCollection } from "@/hooks/use-collection";
 import { uid } from "@/lib/schema";
 import {
   PENDENCIA_CATEGORIAS,
+  PENDENCIA_STATUS,
   type Pendencia,
   type PendenciaCategoria,
   type PendenciaStatus,
+  type PriorityLevel,
 } from "@/lib/types";
-import {
-  Card,
-  Empty,
-  Field,
-  GhostButton,
-  Modal,
-  PageHeader,
-  PrimaryButton,
-  Tag,
-  inputClass,
-} from "@/components/ui";
+import { Empty, PrimaryButton, inputClass } from "@/components/ui";
 
 export default function PendenciasPage() {
-  const { data, save, loading, saving, error } = useCollection("pendencias");
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Pendencia | null>(null);
-  const [text, setText] = useState("");
-  const [categoria, setCategoria] = useState<PendenciaCategoria>("lideranca");
-  const [status, setStatus] = useState<PendenciaStatus>("pendente");
-  const [due, setDue] = useState("");
+  const { data, save, error } = useCollection("pendencias");
+  const [filter, setFilter] = useState<"abertas" | "todas">("abertas");
 
-  function openNew(cat: PendenciaCategoria) {
-    setEditing(null);
-    setText("");
-    setCategoria(cat);
-    setStatus("pendente");
-    setDue("");
-    setOpen(true);
+  const visible = data.filter((item) => (filter === "abertas" ? item.status !== "done" && item.status !== "cancelled" : true));
+  const late = visible.filter((item) => isLate(item)).length;
+
+  function add(categoria: PendenciaCategoria) {
+    void save([
+      ...data,
+      { id: uid(), text: "", status: "pending", due: "", doneAt: "", priority: "media", categoria },
+    ]);
   }
 
-  function openEdit(item: Pendencia) {
-    setEditing(item);
-    setText(item.text);
-    setCategoria(item.categoria);
-    setStatus(item.status);
-    setDue(item.due);
-    setOpen(true);
-  }
-
-  async function onSave() {
-    const t = text.trim();
-    if (!t) return;
-    if (editing) {
-      await save(
-        data.map((x) =>
-          x.id === editing.id ? { ...x, text: t, categoria, status, due } : x,
-        ),
-      );
-    } else {
-      await save([...data, { id: uid(), text: t, categoria, status, due }]);
-    }
-    setOpen(false);
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Excluir esta pendência?")) return;
-    await save(data.filter((x) => x.id !== id));
-  }
-
-  function formatDate(iso: string) {
-    if (!iso) return "";
-    const [y, m, d] = iso.split("-");
-    return `${d}/${m}/${y}`;
+  function patch(id: string, next: Partial<Pendencia>) {
+    void save(
+      data.map((item) => {
+        if (item.id !== id) return item;
+        const status = next.status ?? item.status;
+        return { ...item, ...next, doneAt: status === "done" ? item.doneAt || today() : "" };
+      }),
+    );
   }
 
   return (
     <div>
-      <PageHeader
-        title="Pendências"
-        desc={`Por frente${saving ? " · salvando…" : ""}`}
-      />
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="m-0 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--purple)]">Agenda</p>
+          <h1 className="m-0 text-[28px] font-bold tracking-tight">Pendências</h1>
+          <p className="mt-1 text-[13px] text-[var(--muted)]">
+            {late > 0 ? `${late} atrasada${late > 1 ? "s" : ""}` : "Nada atrasado nas abertas"}
+          </p>
+        </div>
+        <select value={filter} onChange={(e) => setFilter(e.target.value as "abertas" | "todas")} className={inputClass + " w-36"}>
+          <option value="abertas">Abertas</option>
+          <option value="todas">Todas</option>
+        </select>
+      </div>
       {error ? <p className="mb-3 text-sm text-[var(--red)]">{error}</p> : null}
-      {loading ? <p className="text-sm text-[var(--muted)]">Carregando…</p> : null}
 
-      {PENDENCIA_CATEGORIAS.map((cat) => {
-        const items = data.filter((p) => p.categoria === cat.key);
+      {PENDENCIA_CATEGORIAS.map((categoria) => {
+        const items = visible.filter((item) => item.categoria === categoria.key);
         return (
-          <section key={cat.key} className="mb-8">
-            <div className="mb-2.5 flex items-center justify-between gap-2">
-              <h2 className="m-0 flex items-center gap-2 text-[15px] font-bold">
-                <span className="inline-block h-2 w-2 rounded-full bg-[var(--purple)]" />
-                {cat.label}
-              </h2>
-              <PrimaryButton onClick={() => openNew(cat.key)}>+ Adicionar</PrimaryButton>
+          <section key={categoria.key} className="mb-6 rounded-2xl border border-[var(--border)] bg-white p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="m-0 text-[16px] font-bold">{categoria.label}</h2>
+              <PrimaryButton onClick={() => add(categoria.key)}>+ Nova pendência</PrimaryButton>
             </div>
-            <div className="flex flex-col gap-2.5">
-              {items.length === 0 ? (
-                <Empty>Nenhuma pendência em {cat.label}.</Empty>
-              ) : (
-                items.map((item) => (
-                  <Card key={item.id}>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="m-0 text-[14.5px] font-semibold">{item.text}</h3>
-                        <Tag tone={item.status}>
-                          {item.status === "pendente"
-                            ? "Pendente"
-                            : item.status === "andamento"
-                              ? "Em andamento"
-                              : "Concluído"}
-                        </Tag>
-                      </div>
-                      {item.due ? (
-                        <div className="mt-1 text-xs text-[var(--muted)]">
-                          Prazo: {formatDate(item.due)}
-                        </div>
-                      ) : null}
+            {items.length === 0 ? (
+              <Empty>Nenhuma pendência em {categoria.label}.</Empty>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {items.map((item) => (
+                  <article key={item.id} className={`rounded-xl border px-3 py-3 ${isLate(item) ? "border-[var(--red)]" : "border-[var(--border)]"}`}>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <PriorityPill value={item.priority} onChange={(priority) => patch(item.id, { priority })} />
+                      {isLate(item) ? <span className="rounded-full bg-[rgba(209,49,76,0.12)] px-2 py-0.5 text-[10px] font-bold text-[var(--red)]">ATRASADA</span> : null}
+                      {isLate(item) && item.due ? <span className="text-[12px] text-[var(--muted)]">Venceu em {formatDate(item.due)}</span> : null}
                     </div>
-                    <div className="flex gap-1">
-                      <button type="button" className="rounded-md px-2 text-[var(--muted)] hover:bg-black/5" onClick={() => openEdit(item)}>✎</button>
-                      <button type="button" className="rounded-md px-2 text-[var(--muted)] hover:text-[var(--red)]" onClick={() => void remove(item.id)}>🗑</button>
+                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_160px_140px]">
+                      <input
+                        value={item.text}
+                        onChange={(e) => patch(item.id, { text: e.target.value })}
+                        placeholder="Nome da atividade"
+                        className="bg-transparent text-[14px] font-semibold outline-none"
+                      />
+                      <select
+                        value={item.status}
+                        onChange={(e) => patch(item.id, { status: e.target.value as PendenciaStatus })}
+                        className={inputClass}
+                      >
+                        {PENDENCIA_STATUS.map((status) => (
+                          <option key={status.key} value={status.key}>{status.label}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="date"
+                        value={item.due}
+                        onChange={(e) => patch(item.id, { due: e.target.value })}
+                        className={inputClass}
+                      />
                     </div>
-                  </Card>
-                ))
-              )}
-            </div>
+                    {item.doneAt ? <p className="mt-2 text-[12px] font-semibold text-[var(--purple)]">Concluído em {item.doneAt}</p> : null}
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         );
       })}
-
-      <Modal open={open} title={editing ? "Editar pendência" : "Nova pendência"} onClose={() => setOpen(false)}>
-        <Field label="Descrição">
-          <input className={inputClass} value={text} onChange={(e) => setText(e.target.value)} autoFocus />
-        </Field>
-        <Field label="Categoria">
-          <select className={inputClass} value={categoria} onChange={(e) => setCategoria(e.target.value as PendenciaCategoria)}>
-            {PENDENCIA_CATEGORIAS.map((c) => (
-              <option key={c.key} value={c.key}>{c.label}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Status">
-          <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value as PendenciaStatus)}>
-            <option value="pendente">Pendente</option>
-            <option value="andamento">Em andamento</option>
-            <option value="concluido">Concluído</option>
-          </select>
-        </Field>
-        <Field label="Prazo (opcional)">
-          <input className={inputClass} type="date" value={due} onChange={(e) => setDue(e.target.value)} />
-        </Field>
-        <div className="mt-4 flex justify-end gap-2">
-          <GhostButton onClick={() => setOpen(false)}>Cancelar</GhostButton>
-          <PrimaryButton onClick={() => void onSave()}>Salvar</PrimaryButton>
-        </div>
-      </Modal>
     </div>
   );
+}
+
+function PriorityPill({ value, onChange }: { value: PriorityLevel; onChange: (value: PriorityLevel) => void }) {
+  const next: Record<PriorityLevel, PriorityLevel> = { alta: "media", media: "baixa", baixa: "alta" };
+  const label = value === "alta" ? "Alta" : value === "baixa" ? "Baixa" : "Média";
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(next[value])}
+      className="rounded-full bg-[var(--purple-tint)] px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--purple)]"
+    >
+      {label}
+    </button>
+  );
+}
+
+function isLate(item: Pendencia) {
+  if (!item.due || item.status === "done" || item.status === "cancelled") return false;
+  const due = new Date(`${item.due}T23:59:59`);
+  return due.getTime() < Date.now();
+}
+
+function today() {
+  return new Date().toLocaleDateString("pt-BR");
+}
+
+function formatDate(iso: string) {
+  const [year, month, day] = iso.split("-");
+  if (!day) return iso;
+  return `${day}/${month}/${year}`;
 }

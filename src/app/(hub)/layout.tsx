@@ -24,7 +24,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="min-w-0 flex-1 px-8 py-7 max-w-6xl">{children}</main>
+      <main className="min-w-0 flex-1 px-8 py-7 max-w-[1400px]">{children}</main>
     </div>
   );
 }

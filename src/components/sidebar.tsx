@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCollection } from "@/hooks/use-collection";
+import { ANALYSTS } from "@/lib/types";
 import { useAuth } from "./auth-provider";
 
 const ICON = "h-[18px] w-[18px]";
@@ -53,9 +54,9 @@ function IconLinks() {
 
 const NAV = [
   { href: "/home/", label: "Home", icon: IconHome },
-  { href: "/prioridades/", label: "Prioridades", icon: IconPrioridades },
+  { href: "/projetos/", label: "Projetos", icon: IconPrioridades },
   { href: "/pendencias/", label: "Pendências", icon: IconPendencias },
-  { href: "/notas/", label: "Notas", icon: IconNotas },
+  { href: "/notas/", label: "Anotações", icon: IconNotas },
   { href: "/links/", label: "Links", icon: IconLinks },
 ];
 
@@ -64,6 +65,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const { data, save, loading } = useCollection("agenda");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [analystsOpen, setAnalystsOpen] = useState(true);
   const [clock, setClock] = useState("--:--");
   const [today, setToday] = useState("");
 
@@ -107,7 +109,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-[var(--border)] bg-white p-4 sticky top-0 h-screen">
+    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-white p-4">
       <div className="mb-4 flex items-center gap-3 border-b border-[var(--border)] pb-4">
         <button
           type="button"
@@ -135,7 +137,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1">
+      <nav className="flex flex-col gap-1">
         {NAV.map((item) => {
           const isActive =
             pathname === item.href || pathname?.startsWith(item.href.slice(0, -1));
@@ -157,6 +159,31 @@ export function Sidebar() {
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setAnalystsOpen((open) => !open)}
+          className="mt-2 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[var(--muted)] hover:bg-[var(--purple-tint)]"
+        >
+          <span className="text-[var(--purple)]">Analistas</span>
+          <span className="text-xs">{analystsOpen ? "–" : "+"}</span>
+        </button>
+        {analystsOpen
+          ? ANALYSTS.map((person) => {
+              const href = `/analistas/${person.slug}/`;
+              const active = pathname === href || pathname?.startsWith(`/analistas/${person.slug}`);
+              return (
+                <Link
+                  key={person.slug}
+                  href={href}
+                  className={`rounded-lg py-1.5 pl-8 pr-3 text-[13px] ${
+                    active ? "bg-[var(--purple-tint)] font-bold text-[var(--purple)]" : "text-[var(--muted)] hover:bg-[var(--purple-tint)]"
+                  }`}
+                >
+                  {person.name}
+                </Link>
+              );
+            })
+          : null}
       </nav>
 
       <div className="mt-3 border-t border-[var(--border)] pt-3">

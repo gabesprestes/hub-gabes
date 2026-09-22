@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Reminder } from "@/lib/types";
 import { useCollection } from "@/hooks/use-collection";
 import {
   formatHours,
@@ -10,6 +11,7 @@ import {
   weekRange,
   type HourCategory,
 } from "@/lib/calendar";
+import { emptyReminders } from "@/lib/types";
 import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
 
 const CARDS: { key: HourCategory; label: string; hint: string }[] = [
@@ -87,7 +89,7 @@ export default function AgendaHomePage() {
       return;
     }
     setFormError(null);
-    await save({ embedUrl: nextEmbed ?? "", icalUrl: ical, photo: data.photo ?? "" });
+    await save({ ...data, embedUrl: nextEmbed ?? "", icalUrl: ical });
     setShowSetup(false);
   }
 
@@ -156,6 +158,8 @@ export default function AgendaHomePage() {
         </div>
       ) : null}
 
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
+      <div>
       <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
         {embed ? (
           <iframe
@@ -204,6 +208,61 @@ export default function AgendaHomePage() {
           Cole o endereço secreto iCal em Conectar para somar 1:1, Projetos e Focus time.
         </p>
       ) : null}
+      </div>
+      <ReminderColumn
+        reminders={data.reminders?.length ? data.reminders : emptyReminders()}
+        onSave={(reminders) => void save({ ...data, reminders })}
+      />
+      </div>
     </div>
+  );
+}
+
+function ReminderColumn({
+  reminders,
+  onSave,
+}: {
+  reminders: Reminder[];
+  onSave: (reminders: Reminder[]) => void;
+}) {
+  const [drafts, setDrafts] = useState(reminders.map((item) => item.text));
+
+  useEffect(() => {
+    setDrafts(reminders.map((item) => item.text));
+  }, [reminders]);
+
+  return (
+    <aside>
+      <h2 className="mb-2 text-[13px] font-bold text-[var(--muted)]">Lembretes do dia</h2>
+      <div className="grid gap-2">
+        {reminders.map((item, index) => (
+          <label key={item.id} className="block rounded-xl border border-[rgba(138,5,190,0.18)] bg-[rgba(243,232,251,0.85)] p-2.5">
+            <textarea
+              value={drafts[index] ?? ""}
+              onChange={(e) => {
+                const next = [...drafts];
+                next[index] = e.target.value;
+                setDrafts(next);
+              }}
+              onBlur={() => {
+                if ((drafts[index] ?? "") === item.text) return;
+                onSave(
+                  reminders.map((note, noteIndex) =>
+                    noteIndex === index
+                      ? { ...note, text: drafts[index] ?? "", updatedAt: new Date().toISOString() }
+                      : note,
+                  ),
+                );
+              }}
+              placeholder="Lembrete"
+              className="min-h-16 w-full resize-none bg-transparent text-[13px] outline-none"
+            />
+            <div className="text-[10px] text-[var(--muted)]">
+              {item.updatedAt ? new Date(item.updatedAt).toLocaleString("pt-BR") : "Sem edição"}
+            </div>
+          </label>
+        ))}
+      </div>
+    </aside>
   );
 }
