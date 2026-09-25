@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { hoursByCategory, parseIcs, weekKey } from "../src/lib/calendar.ts";
 
 const url = calendarUrl(process.env.ICAL_URL ?? "");
@@ -36,6 +36,23 @@ const payload = {
   colorsFound: result.colorsFound,
   updatedAt: new Date().toISOString(),
 };
+
+let previous: Partial<typeof payload> = {};
+try {
+  previous = JSON.parse(readFileSync("public/hours.json", "utf8"));
+} catch {
+  previous = {};
+}
+const unchanged =
+  previous.weekStart === payload.weekStart &&
+  previous.oneOnOne === payload.oneOnOne &&
+  previous.projetos === payload.projetos &&
+  previous.focus === payload.focus &&
+  previous.colorsFound === payload.colorsFound;
+if (unchanged) {
+  console.log("Saldo sem mudança.");
+  process.exit(0);
+}
 
 writeFileSync("public/hours.json", `${JSON.stringify(payload, null, 2)}\n`);
 console.log(

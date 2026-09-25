@@ -31,6 +31,31 @@ jobs:
         with:
           path: out
 
+  hours:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Somar horas da semana
+        env:
+          ICAL_URL: ${{ secrets.ICAL_URL }}
+          TZ: America/Sao_Paulo
+        run: node --experimental-strip-types scripts/sync-hours.ts
+      - name: Publicar o saldo
+        run: |
+          git add public/hours.json
+          if git diff --cached --quiet; then
+            echo "Saldo sem mudança."
+          else
+            git -c user.name="hub-gabes" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Update week hour totals"
+            git push
+          fi
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
