@@ -1,5 +1,6 @@
 import type {
   AgendaConfig,
+  WeekHours,
   AnalystNote,
   BoardCard,
   CollectionMap,
@@ -22,7 +23,7 @@ export function emptyCollections(): CollectionMap {
     pendencias: [],
     notas: [],
     links: [],
-    agenda: { embedUrl: "", icalUrl: "", photo: "", reminders: emptyReminders() },
+    agenda: { embedUrl: "", icalUrl: "", photo: "", reminders: emptyReminders(), weekHours: null },
     board: [],
     entregas: [],
     analistas: Object.fromEntries(ANALYSTS.map((person) => [person.slug, emptyAnalyst()])),
@@ -139,6 +140,20 @@ function ensureAgenda(x: unknown): AgendaConfig {
     icalUrl: String(o.icalUrl ?? ""),
     photo: String(o.photo ?? ""),
     reminders: ensureReminders(o.reminders),
+    weekHours: ensureWeekHours(o.weekHours),
+  };
+}
+
+function ensureWeekHours(value: unknown): WeekHours | null {
+  const item = (value ?? {}) as Partial<WeekHours>;
+  if (!item.weekStart || !item.updatedAt) return null;
+  return {
+    weekStart: String(item.weekStart),
+    oneOnOne: Number(item.oneOnOne) || 0,
+    projetos: Number(item.projetos) || 0,
+    focus: Number(item.focus) || 0,
+    colorsFound: item.colorsFound !== false,
+    updatedAt: String(item.updatedAt),
   };
 }
 

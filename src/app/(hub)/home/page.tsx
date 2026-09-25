@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Reminder } from "@/lib/types";
 import { useCollection } from "@/hooks/use-collection";
 import {
@@ -34,6 +34,8 @@ export default function AgendaHomePage() {
   const [hoursError, setHoursError] = useState<string | null>(null);
   const [hoursLoading, setHoursLoading] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const embed = toWeekEmbed(data.embedUrl);
   const { start, end } = weekRange();
@@ -47,6 +49,14 @@ export default function AgendaHomePage() {
   }, [loading, data.embedUrl, data.icalUrl]);
 
   useEffect(() => {
+    const saved = data.weekHours;
+    if (saved && saved.weekStart === weekKey()) {
+      setHours({ oneOnOne: saved.oneOnOne, projetos: saved.projetos, focus: saved.focus });
+      setColorsFound(saved.colorsFound);
+      setHoursError(null);
+      setHoursLoading(false);
+      return;
+    }
     let cancelled = false;
     setHoursLoading(true);
     setHoursError(null);
@@ -63,7 +73,7 @@ export default function AgendaHomePage() {
     return () => {
       cancelled = true;
     };
-  }, [data.icalUrl]);
+  }, [data.icalUrl, data.weekHours]);
 
   async function onSave() {
     const nextEmbed = toWeekEmbed(embedInput);
@@ -79,6 +89,31 @@ export default function AgendaHomePage() {
     setFormError(null);
     await save({ ...data, embedUrl: nextEmbed ?? "", icalUrl: ical });
     setShowSetup(false);
+  }
+
+  async function onAgendaFile(file: File | undefined) {
+    if (!file || loading) return;
+    const text = await file.text();
+    if (!text.includes("BEGIN:VCALENDAR")) {
+      setFileError("Esse arquivo não é a agenda. Abra o zip e escolha o arquivo que termina em .ics.");
+      return;
+    }
+    const result = hoursByCategory(parseIcs(text));
+    setHours(result.totals);
+    setColorsFound(result.colorsFound);
+    setHoursError(null);
+    setFileError(null);
+    await save({
+      ...data,
+      weekHours: {
+        weekStart: weekKey(),
+        oneOnOne: result.totals.oneOnOne,
+        projetos: result.totals.projetos,
+        focus: result.totals.focus,
+        colorsFound: result.colorsFound,
+        updatedAt: new Date().toISOString(),
+      },
+    });
   }
 
   return (
@@ -118,7 +153,6 @@ export default function AgendaHomePage() {
             <li>No Google Calendar, abra a engrenagem e depois Configurações.</li>
             <li>Clique na sua agenda, à esquerda, e abra Integrar agenda.</li>
             <li>Copie o código de incorporação e cole abaixo. A página mostra a semana.</li>
-            <li>Para o saldo de horas, copie também o endereço secreto no formato iCal.</li>
           </ol>
           <Field label="Código de incorporação">
             <textarea
@@ -126,14 +160,6 @@ export default function AgendaHomePage() {
               value={embedInput}
               onChange={(e) => setEmbedInput(e.target.value)}
               placeholder='<iframe src="https://calendar.google.com/calendar/embed?src=..."></iframe>'
-            />
-          </Field>
-          <Field label="Endereço secreto iCal (saldo de horas)">
-            <input
-              className={inputClass}
-              value={icalInput}
-              onChange={(e) => setIcalInput(e.target.value)}
-              placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
             />
           </Field>
           {formError ? <p className="mb-3 text-[13px] text-[var(--red)]">{formError}</p> : null}
@@ -185,9 +211,29 @@ export default function AgendaHomePage() {
         ))}
       </div>
 
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="rounded-full border border-[#e4c8f5] bg-white px-3 py-1.5 text-[12px] font-medium text-[var(--purple)] hover:bg-[var(--purple-tint)]"
+        >
+          Atualizar saldo com arquivo
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".ics,text/calendar"
+          className="hidden"
+          onChange={(event) => {
+            void onAgendaFile(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+      </div>
+      {fileError ? <p className="mt-2 text-[13px] text-[var(--red)]">{fileError}</p> : null}
       {hoursError && !hoursLoading ? (
         <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
-          A semana acima continua ao vivo. O saldo entra pelo endereço secreto que termina em basic.ics: cole em Conectar e, no GitHub, crie o segredo ICAL_URL com o mesmo endereço. Depois rode a ação Sync calendar hours.
+          A Nubank não mostra o endereço secreto. No Google Calendar, abra Configurações, depois Importar e exportar, e clique em Exportar. Abra o zip e escolha aqui o arquivo .ics do seu e-mail.
         </p>
       ) : null}
       {hours && !colorsFound ? (

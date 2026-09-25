@@ -84,11 +84,21 @@ export interface Meta {
   owner?: string;
 }
 
+export interface WeekHours {
+  weekStart: string;
+  oneOnOne: number;
+  projetos: number;
+  focus: number;
+  colorsFound: boolean;
+  updatedAt: string;
+}
+
 export interface AgendaConfig {
   embedUrl: string;
   icalUrl: string;
   photo: string;
   reminders: Reminder[];
+  weekHours: WeekHours | null;
 }
 
 export type CollectionMap = {
