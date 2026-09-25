@@ -46,6 +46,12 @@ export interface Reminder {
   updatedAt: string;
 }
 
+export interface BoardLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export interface BoardCard {
   id: string;
   title: string;
@@ -55,6 +61,8 @@ export interface BoardCard {
   startedAt: string;
   column: BoardColumn;
   doneAt: string;
+  comments: string;
+  links: BoardLink[];
 }
 
 export interface Entrega {

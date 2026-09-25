@@ -171,7 +171,19 @@ function ensureBoard(x: unknown): BoardCard {
     startedAt: String(o.startedAt ?? ""),
     column: columns.includes(column as (typeof columns)[number]) ? (column as BoardCard["column"]) : "backlog",
     doneAt: String(o.doneAt ?? ""),
+    comments: String(o.comments ?? ""),
+    links: ensureBoardLinks(o.links),
   };
+}
+
+function ensureBoardLinks(value: BoardCard["links"] | undefined): BoardCard["links"] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const link = (item ?? {}) as Partial<BoardCard["links"][number]>;
+    const url = String(link.url ?? "").trim();
+    if (!url) return [];
+    return [{ id: String(link.id || uid()), label: String(link.label ?? ""), url }];
+  });
 }
 
 function ensureEntrega(x: unknown): Entrega {

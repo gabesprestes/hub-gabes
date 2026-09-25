@@ -8,6 +8,7 @@ import {
   hoursByCategory,
   parseIcs,
   toWeekEmbed,
+  weekKey,
   weekRange,
   type HourCategory,
 } from "@/lib/calendar";
@@ -15,10 +16,13 @@ import { uid } from "@/lib/schema";
 import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
 
 const CARDS: { key: HourCategory; label: string; hint: string }[] = [
-  { key: "oneOnOne", label: "1:1", hint: "Começa com 1:1 ou cita um analista" },
-  { key: "projetos", label: "Projetos", hint: "Rituais recorrentes, cor Grafite" },
-  { key: "focus", label: "Focus time", hint: "Cor padrão, focus e pendências" },
+  { key: "oneOnOne", label: "1:1", hint: "1:1 e reuniões com o time" },
+  { key: "projetos", label: "Projetos", hint: "Rituais e follow up" },
+  { key: "focus", label: "Focus time", hint: "Focus e pendências" },
 ];
+
+const HOURS_URL = "https://raw.githubusercontent.com/gabesprestes/hub-gabes/master/public/hours.json";
+const PER_COLUMN = 5;
 
 export default function AgendaHomePage() {
   const { data, save, loading, saving, error } = useCollection("agenda");
@@ -43,31 +47,15 @@ export default function AgendaHomePage() {
   }, [loading, data.embedUrl, data.icalUrl]);
 
   useEffect(() => {
-    if (!data.icalUrl) {
-      setHours(null);
-      setHoursError(null);
-      return;
-    }
     let cancelled = false;
     setHoursLoading(true);
     setHoursError(null);
-    fetch(data.icalUrl)
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Não foi possível ler a agenda.");
-        return res.text();
-      })
-      .then((text) => {
+    loadWeekHours(data.icalUrl)
+      .then((result) => {
         if (cancelled) return;
-        const result = hoursByCategory(parseIcs(text));
-        setHours(result.totals);
-        setColorsFound(result.colorsFound);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setHours(null);
-        setHoursError(
-          "O Google não deixa esta página somar os horários direto. A agenda da semana acima continua ao vivo.",
-        );
+        setHours(result?.totals ?? null);
+        setColorsFound(result?.colorsFound ?? true);
+        setHoursError(result ? null : "missing");
       })
       .finally(() => {
         if (!cancelled) setHoursLoading(false);
@@ -158,7 +146,7 @@ export default function AgendaHomePage() {
         </div>
       ) : null}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
       <div>
       <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
         {embed ? (
@@ -187,25 +175,24 @@ export default function AgendaHomePage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {CARDS.map((card) => (
-          <div key={card.key} className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
-            <div className="text-[13px] font-semibold text-[var(--muted)]">{card.label}</div>
-            <div className="mt-2 font-mono text-[32px] font-bold tabular-nums tracking-tight text-[var(--text)]">
-              {hoursLoading ? "…" : formatHours(hours?.[card.key] ?? 0)}
+          <div key={card.key} className="rounded-2xl border border-[#e4c8f5] bg-white px-4 py-3">
+            <div className="text-[12px] font-medium text-[var(--muted)]">{card.label}</div>
+            <div className="mt-1 text-[40px] font-light leading-none tracking-tight text-[#b06ad4]">
+              {hoursLoading ? "…" : hours ? formatHours(hours[card.key]) : "—"}
             </div>
-            <div className="mt-1 text-[12px] text-[var(--muted)]">{card.hint}</div>
+            <div className="mt-2 text-[11px] text-[var(--muted)]">{card.hint}</div>
           </div>
         ))}
       </div>
 
-      {hoursError ? <p className="mt-3 text-[13px] text-[var(--muted)]">{hoursError}</p> : null}
-      {hours && !colorsFound ? (
-        <p className="mt-3 text-[13px] text-[var(--muted)]">
-          1:1, projetos e focus time entram pelo título do evento. A cor Grafite e a cor padrão só somam quando o arquivo da agenda informar a cor.
+      {hoursError && !hoursLoading ? (
+        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
+          A semana acima continua ao vivo. O saldo entra pelo endereço secreto que termina em basic.ics: cole em Conectar e, no GitHub, crie o segredo ICAL_URL com o mesmo endereço. Depois rode a ação Sync calendar hours.
         </p>
       ) : null}
-      {!data.icalUrl && embed ? (
+      {hours && !colorsFound ? (
         <p className="mt-3 text-[13px] text-[var(--muted)]">
-          Cole o endereço secreto iCal em Conectar para somar 1:1, Projetos e Focus time.
+          1:1, follow up, rituais e focus time entram pelo título. A cor do evento só soma quando a agenda informa a cor.
         </p>
       ) : null}
       </div>
@@ -216,6 +203,56 @@ export default function AgendaHomePage() {
       </div>
     </div>
   );
+}
+
+async function loadWeekHours(icalUrl: string) {
+  if (icalUrl) {
+    try {
+      const res = await fetch(icalUrl);
+      if (res.ok) {
+        const text = await res.text();
+        if (text.includes("BEGIN:VCALENDAR")) {
+          const result = hoursByCategory(parseIcs(text));
+          return { totals: result.totals, colorsFound: result.colorsFound };
+        }
+      }
+    } catch {
+      // The browser cannot read Google Calendar directly.
+    }
+  }
+
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  for (const url of [`${HOURS_URL}?t=${Date.now()}`, `${base}/hours.json?t=${Date.now()}`]) {
+    const saved = await readSavedHours(url);
+    if (saved) return saved;
+  }
+  return null;
+}
+
+async function readSavedHours(url: string) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      weekStart?: string;
+      oneOnOne?: number;
+      projetos?: number;
+      focus?: number;
+      colorsFound?: boolean;
+      updatedAt?: string;
+    };
+    if (!json.updatedAt || json.weekStart !== weekKey()) return null;
+    return {
+      totals: {
+        oneOnOne: Number(json.oneOnOne) || 0,
+        projetos: Number(json.projetos) || 0,
+        focus: Number(json.focus) || 0,
+      },
+      colorsFound: json.colorsFound !== false,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function ReminderColumn({
@@ -231,61 +268,124 @@ function ReminderColumn({
     setDrafts(reminders.map((item) => item.text));
   }, [reminders]);
 
+  function withDrafts(list: Reminder[]) {
+    return list.map((item) => {
+      const index = reminders.findIndex((note) => note.id === item.id);
+      if (index < 0) return item;
+      const text = drafts[index] ?? item.text;
+      if (text === item.text) return item;
+      return { ...item, text, updatedAt: new Date().toISOString() };
+    });
+  }
+
   function add() {
-    onSave([...reminders, { id: uid(), text: "", updatedAt: "" }]);
+    if (reminders.length >= PER_COLUMN * 2) return;
+    onSave([...withDrafts(reminders), { id: uid(), text: "", updatedAt: "" }]);
   }
 
   function remove(id: string) {
-    onSave(reminders.filter((item) => item.id !== id));
+    onSave(withDrafts(reminders).filter((item) => item.id !== id));
   }
 
+  const columns = [reminders.slice(0, PER_COLUMN), reminders.slice(PER_COLUMN, PER_COLUMN * 2)];
+
   return (
-    <aside>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="m-0 text-[13px] font-bold text-[var(--muted)]">Lembretes</h2>
-        <button
-          type="button"
-          onClick={add}
-          aria-label="Novo lembrete"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-[rgba(138,5,190,0.35)] bg-white text-[16px] leading-none text-[var(--purple)] hover:bg-[var(--purple-tint)]"
-        >
-          +
-        </button>
-      </div>
-      <div className="grid gap-2">
-        {reminders.map((item, index) => (
-          <div key={item.id} className="rounded-xl border border-[rgba(138,5,190,0.18)] bg-[rgba(243,232,251,0.85)] p-2.5">
-            <textarea
-              value={drafts[index] ?? ""}
-              onChange={(e) => {
+    <aside className="flex items-start gap-3">
+      <div className="w-[210px]">
+        <h2 className="mb-2 text-[13px] font-bold text-[var(--muted)]">Lembretes</h2>
+        <div className="grid gap-2">
+          {columns[0].map((item, index) => (
+            <ReminderNote
+              key={item.id}
+              item={item}
+              draft={drafts[index] ?? ""}
+              onDraft={(text) => {
                 const next = [...drafts];
-                next[index] = e.target.value;
+                next[index] = text;
                 setDrafts(next);
               }}
               onBlur={() => {
                 if ((drafts[index] ?? "") === item.text) return;
-                onSave(
-                  reminders.map((note, noteIndex) =>
-                    noteIndex === index
-                      ? { ...note, text: drafts[index] ?? "", updatedAt: new Date().toISOString() }
-                      : note,
-                  ),
-                );
+                onSave(withDrafts(reminders));
               }}
-              placeholder="Lembrete"
-              className="min-h-16 w-full resize-none bg-transparent text-[13px] outline-none"
+              onRemove={() => remove(item.id)}
             />
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] text-[var(--muted)]">
-                {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString("pt-BR") : ""}
-              </span>
-              <button type="button" onClick={() => remove(item.id)} className="text-[11px] text-[var(--muted)] hover:text-[var(--red)]">
-                Apagar
-              </button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+      <div className="w-[210px]">
+        <div className="mb-2 flex justify-end">
+          {reminders.length < PER_COLUMN * 2 ? (
+            <button
+              type="button"
+              onClick={add}
+              aria-label="Adicionar lembrete"
+              title="Adicionar até mais 5 lembretes"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-[rgba(138,5,190,0.35)] bg-white text-[16px] leading-none text-[var(--purple)] hover:bg-[var(--purple-tint)]"
+            >
+              +
+            </button>
+          ) : (
+            <span className="h-7" />
+          )}
+        </div>
+        <div className="grid gap-2">
+          {columns[1].map((item, index) => {
+            const realIndex = index + PER_COLUMN;
+            return (
+              <ReminderNote
+                key={item.id}
+                item={item}
+                draft={drafts[realIndex] ?? ""}
+                onDraft={(text) => {
+                  const next = [...drafts];
+                  next[realIndex] = text;
+                  setDrafts(next);
+                }}
+                onBlur={() => {
+                  if ((drafts[realIndex] ?? "") === item.text) return;
+                  onSave(withDrafts(reminders));
+                }}
+                onRemove={() => remove(item.id)}
+              />
+            );
+          })}
+        </div>
       </div>
     </aside>
+  );
+}
+
+function ReminderNote({
+  item,
+  draft,
+  onDraft,
+  onBlur,
+  onRemove,
+}: {
+  item: Reminder;
+  draft: string;
+  onDraft: (text: string) => void;
+  onBlur: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-[rgba(138,5,190,0.18)] bg-[rgba(243,232,251,0.85)] p-2.5">
+      <textarea
+        value={draft}
+        onChange={(e) => onDraft(e.target.value)}
+        onBlur={onBlur}
+        placeholder="Lembrete"
+        className="min-h-16 w-full resize-none bg-transparent text-[13px] outline-none"
+      />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] text-[var(--muted)]">
+          {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString("pt-BR") : ""}
+        </span>
+        <button type="button" onClick={onRemove} className="text-[11px] text-[var(--muted)] hover:text-[var(--red)]">
+          Apagar
+        </button>
+      </div>
+    </div>
   );
 }

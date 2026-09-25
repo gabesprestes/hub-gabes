@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCollection } from "@/hooks/use-collection";
 import { uid } from "@/lib/schema";
 import {
@@ -12,15 +12,16 @@ import {
   type BoardCard,
   type BoardColumn,
   type Entrega,
+  type BoardLink,
   type ProjectCategory,
 } from "@/lib/types";
 import { Empty, Field, GhostButton, Modal, PrimaryButton, inputClass } from "@/components/ui";
 
-const COLUMN_STYLE: Record<BoardColumn, { header: string; body: string }> = {
-  backlog: { header: "bg-[#d5d5db] text-[#3c3c44]", body: "bg-[#ececef]" },
-  andamento: { header: "bg-[#c5ddf6] text-[#1d4f86]", body: "bg-[#e7f2fc]" },
-  pausado: { header: "bg-[#f3dc9a] text-[#7a5b10]", body: "bg-[#fff4d4]" },
-  concluido: { header: "bg-[#b7e4c9] text-[#1d6b45]", body: "bg-[#e5f6ee]" },
+const COLUMN_STYLE: Record<BoardColumn, { header: string; body: string; border: string }> = {
+  backlog: { header: "bg-[#d5d5db] text-[#3c3c44]", body: "bg-[#ececef]", border: "border-[#bdbdc4]" },
+  andamento: { header: "bg-[#c5ddf6] text-[#1d4f86]", body: "bg-[#e7f2fc]", border: "border-[#7eafeb]" },
+  pausado: { header: "bg-[#f3dc9a] text-[#7a5b10]", body: "bg-[#fff4d4]", border: "border-[#e2c15a]" },
+  concluido: { header: "bg-[#b7e4c9] text-[#1d6b45]", body: "bg-[#e5f6ee]", border: "border-[#3dae73]" },
 };
 
 const blankForm = () => ({
@@ -52,6 +53,8 @@ export default function ProjetosPage() {
         startedAt: form.startedAt || isoToday(),
         column: "backlog",
         doneAt: "",
+        comments: "",
+        links: [],
       },
     ]);
     setForm(blankForm());
@@ -109,40 +112,14 @@ export default function ProjetosPage() {
               </div>
               <div className="flex flex-1 flex-col gap-2">
                 {cards.map((card) => (
-                  <article
+                  <ProjectCard
                     key={card.id}
-                    draggable
+                    card={card}
+                    border={style.border}
                     onDragStart={() => setDragging(card.id)}
-                    className="cursor-grab rounded-xl border border-white/80 bg-white p-3 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <input
-                        value={card.title}
-                        onChange={(e) => void updateCard(board.data, card.id, { title: e.target.value }, board.save)}
-                        className="w-full bg-transparent text-[13px] font-semibold outline-none"
-                      />
-                      <button
-                        type="button"
-                        aria-label="Excluir projeto"
-                        className="text-[14px] leading-none text-[var(--muted)] hover:text-[var(--red)]"
-                        onClick={() => void board.save(board.data.filter((item) => item.id !== card.id))}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <input
-                      value={card.detail}
-                      onChange={(e) => void updateCard(board.data, card.id, { detail: e.target.value }, board.save)}
-                      placeholder="Descrição"
-                      className="mt-1 w-full bg-transparent text-[11px] text-[var(--muted)] outline-none"
-                    />
-                    <p className="mt-2 text-[11px] text-[var(--muted)]">
-                      {categoryLabel(card.category)}
-                      {card.startedAt ? ` · Início ${formatDate(card.startedAt)}` : ""}
-                      {card.deadline ? ` · Prazo ${formatDate(card.deadline)}` : ""}
-                    </p>
-                    {card.doneAt ? <p className="mt-1 text-[11px] font-semibold text-[#1d6b45]">Concluído em {card.doneAt}</p> : null}
-                  </article>
+                    onPatch={(patch) => updateCard(board.data, card.id, patch, board.save)}
+                    onDelete={() => void board.save(board.data.filter((item) => item.id !== card.id))}
+                  />
                 ))}
                 {cards.length === 0 ? <Empty>Solte um card aqui.</Empty> : null}
               </div>
@@ -249,6 +226,151 @@ export default function ProjetosPage() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+function ProjectCard({
+  card,
+  border,
+  onDragStart,
+  onPatch,
+  onDelete,
+}: {
+  card: BoardCard;
+  border: string;
+  onDragStart: () => void;
+  onPatch: (patch: Partial<BoardCard>) => Promise<void>;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState(card.title);
+  const [detail, setDetail] = useState(card.detail);
+  const [comments, setComments] = useState(card.comments ?? "");
+  const [linkLabel, setLinkLabel] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+
+  useEffect(() => {
+    setTitle(card.title);
+    setDetail(card.detail);
+    setComments(card.comments ?? "");
+  }, [card.title, card.detail, card.comments]);
+
+  function saveText(patch: Partial<BoardCard>) {
+    const changed = (Object.keys(patch) as (keyof BoardCard)[]).some((key) => patch[key] !== card[key]);
+    if (!changed) return;
+    void onPatch(patch);
+  }
+
+  function addLink() {
+    let url = linkUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    const next: BoardLink = { id: uid(), label: linkLabel.trim(), url };
+    setLinkLabel("");
+    setLinkUrl("");
+    void onPatch({ links: [...(card.links ?? []), next] });
+  }
+
+  return (
+    <article
+      draggable
+      onDragStart={onDragStart}
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest("input, textarea, button, a, select")) return;
+        setOpen((value) => !value);
+      }}
+      className={`cursor-grab rounded-xl border bg-white p-3 shadow-sm ${border}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          onBlur={() => saveText({ title })}
+          className="w-full bg-transparent text-[13px] font-semibold outline-none"
+        />
+        <button
+          type="button"
+          aria-label="Excluir projeto"
+          className="text-[14px] leading-none text-[var(--muted)] hover:text-[var(--red)]"
+          onClick={onDelete}
+        >
+          ×
+        </button>
+      </div>
+      <input
+        value={detail}
+        onChange={(event) => setDetail(event.target.value)}
+        onBlur={() => saveText({ detail })}
+        placeholder="Descrição"
+        className="mt-1 w-full bg-transparent text-[11px] text-[var(--muted)] outline-none"
+      />
+      <p className="mt-2 text-[11px] text-[var(--muted)]">
+        {categoryLabel(card.category)}
+        {card.startedAt ? ` · Início ${formatDate(card.startedAt)}` : ""}
+        {card.deadline ? ` · Prazo ${formatDate(card.deadline)}` : ""}
+      </p>
+      {card.doneAt ? <p className="mt-1 text-[11px] font-semibold text-[#1d6b45]">Concluído em {card.doneAt}</p> : null}
+      {!open && (card.comments || card.links?.length) ? (
+        <p className="mt-2 text-[10px] text-[var(--purple)]">Toque para ver comentários e links</p>
+      ) : null}
+
+      {open ? (
+        <div className="mt-3 border-t border-black/5 pt-3">
+          <p className="m-0 text-[11px] font-semibold text-[var(--muted)]">Comentários</p>
+          <textarea
+            value={comments}
+            onChange={(event) => setComments(event.target.value)}
+            onBlur={() => saveText({ comments })}
+            placeholder="Anotações do projeto"
+            className="mt-1 min-h-20 w-full resize-none rounded-lg border border-black/10 bg-[#fafafa] p-2 text-[12px] outline-none"
+          />
+          <p className="mb-1 mt-3 text-[11px] font-semibold text-[var(--muted)]">Links</p>
+          <div className="flex flex-col gap-1">
+            {(card.links ?? []).map((link) => (
+              <div key={link.id} className="flex items-center gap-2">
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate text-[12px] text-[var(--purple)]">
+                  {link.label || link.url}
+                </a>
+                <button
+                  type="button"
+                  aria-label="Remover link"
+                  className="text-[14px] leading-none text-[var(--muted)] hover:text-[var(--red)]"
+                  onClick={() => void onPatch({ links: (card.links ?? []).filter((item) => item.id !== link.id) })}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-col gap-1">
+            <input
+              value={linkLabel}
+              onChange={(event) => setLinkLabel(event.target.value)}
+              placeholder="Nome do link"
+              className="h-7 rounded-md border border-black/10 bg-white px-2 text-[12px] outline-none"
+            />
+            <div className="flex gap-1">
+              <input
+                value={linkUrl}
+                onChange={(event) => setLinkUrl(event.target.value)}
+                placeholder="https://"
+                className="h-7 min-w-0 flex-1 rounded-md border border-black/10 bg-white px-2 text-[12px] outline-none"
+              />
+              <button
+                type="button"
+                onClick={addLink}
+                className="rounded-md border border-[var(--purple)] px-2 text-[11px] font-semibold text-[var(--purple)]"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+          <button type="button" onClick={() => setOpen(false)} className="mt-3 text-[11px] font-semibold text-[var(--purple)]">
+            Fechar
+          </button>
+        </div>
+      ) : null}
+    </article>
   );
 }
 

@@ -1,6 +1,6 @@
 export type HourCategory = "oneOnOne" | "projetos" | "focus";
 
-const ANALYSTS = ["mayara", "evelyn", "livia", "alan", "matheus", "luciana", "francilene"];
+const ANALYSTS = ["mayara", "evelyn", "livia", "alan", "matheus", "luciana", "franciele", "francilene"];
 
 /** Grafite, a cor mais escura da paleta de eventos do Google Calendar. */
 const DARK_COLOR = /^(8|graphite|grafite|#616161)$/i;
@@ -48,6 +48,13 @@ export function toWeekEmbed(input: string): string | null {
   return parsed.toString();
 }
 
+export function weekKey(now = new Date()) {
+  const { start } = weekRange(now);
+  const month = String(start.getMonth() + 1).padStart(2, "0");
+  const day = String(start.getDate()).padStart(2, "0");
+  return `${start.getFullYear()}-${month}-${day}`;
+}
+
 export function weekRange(now = new Date()) {
   const start = new Date(now);
   const day = start.getDay();
@@ -72,9 +79,10 @@ const FOCUS = ["focus time", "pendencias quality", "pendencias csat"];
 
 export function categorize(event: CalendarEvent): HourCategory | null {
   const text = normalize(event.title);
+  if (isOneOnOne(event.title)) return "oneOnOne";
   if (PROJETOS.some((name) => text.includes(name))) return "projetos";
   if (FOCUS.some((name) => text.includes(name))) return "focus";
-  if (isOneOnOne(event.title)) return "oneOnOne";
+  if (isFollowUp(event.title)) return "projetos";
   if (event.color === "unknown") return null;
   if (event.recurring && event.color === "dark") return "projetos";
   if (event.color === "default") return "focus";
@@ -82,10 +90,15 @@ export function categorize(event: CalendarEvent): HourCategory | null {
 }
 
 function isOneOnOne(title: string) {
-  const starts = /^\s*1\s*:\s*1\b/i.test(title);
+  const marker = /\b1\s*[:x]\s*1\b/i.test(title);
   const text = normalize(title);
   const named = ANALYSTS.some((name) => new RegExp(`\\b${name}\\b`, "i").test(text));
-  return starts || named;
+  return marker || named;
+}
+
+function isFollowUp(title: string) {
+  const text = normalize(title);
+  return text.includes("follow up") || text.includes("follow-up") || text.includes("followup");
 }
 
 function normalize(value: string) {
@@ -190,6 +203,7 @@ export function parseIcs(raw: string): CalendarEvent[] {
     const start = parseIcsDate(fieldLine(body, "DTSTART"));
     const end = parseIcsDate(fieldLine(body, "DTEND"));
     if (!start || !end || end <= start) continue;
+    if (/^STATUS[;:]CANCELLED/m.test(body)) continue;
     const startLine = fieldLine(body, "DTSTART") ?? "";
     if (/VALUE=DATE(;|$)/.test(startLine) && !startLine.includes("T")) continue;
     const rrule = unfoldValue(body, "RRULE");

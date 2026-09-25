@@ -110,7 +110,7 @@ export function Sidebar() {
 
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-white p-4">
-      <div className="mb-4 flex items-center gap-3 border-b border-[var(--border)] pb-4">
+      <div className="mb-4 flex items-start gap-3 border-b border-[var(--border)] pb-4">
         <button
           type="button"
           title="Colocar minha foto"
@@ -134,6 +134,7 @@ export function Sidebar() {
         <div>
           <div className="text-[15px] font-bold leading-tight">Hub Gabes</div>
           <div className="text-[11px] text-[var(--muted)]">{today}</div>
+          <p className="m-0 mt-1 text-[12px] font-medium leading-snug text-[var(--purple)]">Tenha um ótimo dia, Gabrielle!</p>
         </div>
       </div>
 

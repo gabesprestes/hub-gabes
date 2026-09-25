@@ -1,0 +1,36 @@
+name: Sync calendar hours
+
+on:
+  schedule:
+    - cron: "0 11,14,17,20,23 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: calendar-hours
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Somar horas da semana
+        env:
+          ICAL_URL: ${{ secrets.ICAL_URL }}
+          TZ: America/Sao_Paulo
+        run: npx --yes tsx scripts/sync-hours.ts
+      - name: Publicar o saldo
+        run: |
+          git add public/hours.json
+          if git diff --cached --quiet; then
+            echo "Saldo sem mudança."
+          else
+            git -c user.name="hub-gabes" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Update week hour totals"
+            git push
+          fi
