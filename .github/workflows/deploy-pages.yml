@@ -24,11 +24,6 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Somar horas da semana
-        env:
-          ICAL_URL: ${{ secrets.ICAL_URL }}
-          TZ: America/Sao_Paulo
-        run: npx --yes tsx scripts/sync-hours.ts
       - run: npm run build
         env:
           GITHUB_PAGES: "true"

@@ -7,12 +7,19 @@ if (!url) {
   process.exit(0);
 }
 
-const response = await fetch(url);
-const text = await response.text();
-if (!response.ok || !text.includes("BEGIN:VCALENDAR")) {
+let text = "";
+try {
+  const response = await fetch(url);
+  text = await response.text();
+  if (!response.ok || !text.includes("BEGIN:VCALENDAR")) {
+    console.error("Não foi possível ler a agenda.");
+    process.exit(0);
+  }
+} catch {
   console.error("Não foi possível ler a agenda.");
   process.exit(0);
 }
+
 const result = hoursByCategory(parseIcs(text));
 const payload = {
   weekStart: weekKey(),
