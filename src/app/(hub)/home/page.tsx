@@ -35,7 +35,7 @@ export default function AgendaHomePage() {
   }
 
   return (
-    <div className="-mb-7 flex h-[calc(100dvh-1.75rem)] flex-col">
+    <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="m-0 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--purple)]">Visão geral</p>
@@ -90,16 +90,16 @@ export default function AgendaHomePage() {
         </div>
       ) : null}
 
-      <div className="grid min-h-0 flex-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
-      <div className="h-full min-h-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
         {embed ? (
           <iframe
             title="Agenda da semana"
             src={embed}
-            className="h-full w-full border-0"
+            className="h-[640px] w-full border-0"
           />
         ) : (
-          <div className="flex h-full items-center justify-center px-6 py-16 text-center">
+          <div className="px-6 py-16 text-center">
             <p className="m-0 text-[15px] font-semibold">A agenda ainda não está conectada</p>
             <p className="mx-auto mt-2 max-w-md text-[13px] text-[var(--muted)]">
               O link da visão Semana abre só no Google. Aqui entra o código de incorporação, já em semana.
@@ -154,10 +154,10 @@ function ReminderColumn({
   const columns = [reminders.slice(0, PER_COLUMN), reminders.slice(PER_COLUMN, PER_COLUMN * 2)];
 
   return (
-    <aside className="flex h-full min-h-0 items-stretch gap-3">
-      <div className="flex h-full w-[210px] flex-col">
-        <h2 className="mb-2 flex h-7 shrink-0 items-center text-[13px] font-bold text-[var(--muted)]">Lembretes</h2>
-        <div className="grid min-h-0 flex-1 grid-rows-5 gap-2">
+    <aside className="flex items-start gap-3">
+      <div className="w-[210px]">
+        <h2 className="mb-2 text-[13px] font-bold text-[var(--muted)]">Lembretes</h2>
+        <div className="grid gap-2">
           {columns[0].map((item, index) => (
             <ReminderNote
               key={item.id}
@@ -177,8 +177,8 @@ function ReminderColumn({
           ))}
         </div>
       </div>
-      <div className="flex h-full w-[210px] flex-col">
-        <div className="mb-2 flex h-7 shrink-0 justify-end">
+      <div className="w-[210px]">
+        <div className="mb-2 flex justify-end">
           {reminders.length < PER_COLUMN * 2 ? (
             <button
               type="button"
@@ -193,7 +193,7 @@ function ReminderColumn({
             <span className="h-7" />
           )}
         </div>
-        <div className="grid min-h-0 flex-1 grid-rows-5 gap-2">
+        <div className="grid gap-2">
           {columns[1].map((item, index) => {
             const realIndex = index + PER_COLUMN;
             return (
@@ -234,13 +234,13 @@ function ReminderNote({
   onRemove: () => void;
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-xl border border-[rgba(138,5,190,0.18)] bg-[rgba(243,232,251,0.85)] p-2.5">
+    <div className="rounded-xl border border-[rgba(138,5,190,0.18)] bg-[rgba(243,232,251,0.85)] p-2.5">
       <textarea
         value={draft}
         onChange={(e) => onDraft(e.target.value)}
         onBlur={onBlur}
         placeholder="Lembrete"
-        className="min-h-0 w-full flex-1 resize-none bg-transparent text-[13px] outline-none"
+        className="min-h-16 w-full resize-none bg-transparent text-[13px] outline-none"
       />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] text-[var(--muted)]">

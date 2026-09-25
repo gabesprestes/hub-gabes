@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { Sidebar } from "@/components/sidebar";
 
 export default function HubLayout({ children }: { children: React.ReactNode }) {
   const { token, ready } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const home = pathname.startsWith("/home");
 
   useEffect(() => {
     if (ready && !token) router.replace("/login/");
@@ -24,7 +26,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="min-w-0 flex-1 px-8 py-7 max-w-[1400px]">{children}</main>
+      <main className={home ? "min-w-0 flex-1 px-5 py-7" : "min-w-0 flex-1 max-w-[1400px] px-8 py-7"}>{children}</main>
     </div>
   );
 }
