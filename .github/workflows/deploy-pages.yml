@@ -24,6 +24,9 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - name: Manchetes do G1
+        continue-on-error: true
+        run: node --experimental-strip-types scripts/sync-news.ts
       - run: npm run build
         env:
           GITHUB_PAGES: "true"

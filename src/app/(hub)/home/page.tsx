@@ -8,6 +8,9 @@ import { uid } from "@/lib/schema";
 import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
 
 const PER_COLUMN = 5;
+const NEWS_URL = "https://raw.githubusercontent.com/gabesprestes/hub-gabes/master/public/news.json";
+
+type Headline = { title: string; link: string };
 
 export default function AgendaHomePage() {
   const { data, save, loading, saving, error } = useCollection("agenda");
@@ -40,7 +43,7 @@ export default function AgendaHomePage() {
         <div>
           <p className="m-0 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--purple)]">Visão geral</p>
           <h1 className="m-0 text-[28px] font-bold tracking-tight">Home</h1>
-          <p className="mt-1 text-[13px] text-[var(--muted)]">Agenda da semana, ao vivo.</p>
+          <p className="mt-1 text-[13px] text-[var(--muted)]">Agenda da semana, ao vivo, e manchetes do G1.</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-[var(--purple)] px-3 py-1.5 text-[12px] font-semibold text-white">Semana</span>
@@ -91,6 +94,7 @@ export default function AgendaHomePage() {
       ) : null}
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
+      <div>
       <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
         {embed ? (
           <iframe
@@ -110,6 +114,8 @@ export default function AgendaHomePage() {
           </div>
         )}
       </div>
+      <G1News />
+      </div>
       <ReminderColumn
         reminders={data.reminders ?? []}
         onSave={(reminders) => void save({ ...data, reminders })}
@@ -117,6 +123,82 @@ export default function AgendaHomePage() {
       </div>
     </div>
   );
+}
+
+function G1News() {
+  const [items, setItems] = useState<Headline[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadHeadlines().then((headlines) => {
+      if (cancelled) return;
+      if (!headlines) setFailed(true);
+      else setItems(headlines);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <section className="mt-4 rounded-2xl border border-[#e4c8f5] bg-white px-4 py-3">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 className="m-0 text-[15px] font-bold">G1 hoje</h2>
+        <a
+          href="https://g1.globo.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[12px] font-medium text-[var(--purple)]"
+        >
+          Abrir o G1
+        </a>
+      </div>
+      {items ? (
+        <ul className="m-0 grid list-none gap-2 p-0">
+          {items.map((item) => (
+            <li key={item.link}>
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[13px] font-medium leading-snug text-[var(--text)] hover:text-[var(--purple)]"
+              >
+                {item.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="m-0 text-[13px] text-[var(--muted)]">
+          {failed ? "As manchetes do G1 não carregaram agora." : "Carregando manchetes…"}
+        </p>
+      )}
+    </section>
+  );
+}
+
+async function loadHeadlines(): Promise<Headline[] | null> {
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  for (const url of [`${NEWS_URL}?t=${Date.now()}`, `${base}/news.json?t=${Date.now()}`]) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) continue;
+      const json = (await response.json()) as { items?: Headline[] };
+      const items = (json.items ?? []).filter(
+        (item) =>
+          Boolean(item) &&
+          typeof item.title === "string" &&
+          item.title.length > 0 &&
+          typeof item.link === "string" &&
+          item.link.startsWith("https://g1.globo.com/"),
+      );
+      if (items.length > 0) return items.slice(0, 4);
+    } catch {
+      // The next address may still have the headlines.
+    }
+  }
+  return null;
 }
 
 function ReminderColumn({
