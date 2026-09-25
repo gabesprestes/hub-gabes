@@ -150,7 +150,7 @@ export default function PendenciasPage() {
 
 function PriorityPill({ value, onChange }: { value: PriorityLevel; onChange: (value: PriorityLevel) => void }) {
   const next: Record<PriorityLevel, PriorityLevel> = { alta: "media", media: "baixa", baixa: "alta" };
-  const label = value === "alta" ? "Alta" : value === "baixa" ? "Baixa" : "Média";
+  const label = value === "alta" ? "Alta Prioridade" : value === "baixa" ? "Baixa Prioridade" : "Média Prioridade";
   const tone =
     value === "alta"
       ? "bg-[#f8d0d6] text-[#c4233c]"
@@ -161,7 +161,7 @@ function PriorityPill({ value, onChange }: { value: PriorityLevel; onChange: (va
     <button
       type="button"
       onClick={() => onChange(next[value])}
-      className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold uppercase ${tone}`}
+      className={`shrink-0 whitespace-nowrap rounded-full px-1.5 py-px text-[9px] font-bold ${tone}`}
     >
       {label}
     </button>

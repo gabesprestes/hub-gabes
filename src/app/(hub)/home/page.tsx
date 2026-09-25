@@ -352,8 +352,8 @@ function ReminderNote({
         <span className="text-[10px] text-[var(--muted)]">
           {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString("pt-BR") : ""}
         </span>
-        <button type="button" onClick={onRemove} className="text-[11px] text-[var(--muted)] hover:text-[var(--red)]">
-          Apagar
+        <button type="button" onClick={onRemove} aria-label="Apagar lembrete" className="px-0.5 text-[14px] leading-none text-[var(--muted)] hover:text-[var(--red)]">
+          ×
         </button>
       </div>
     </div>
