@@ -15,6 +15,8 @@ export interface CalendarEvent {
   color: EventColor;
   rrule: string | null;
   exdates: Date[];
+  uid: string | null;
+  recurrenceId: Date | null;
 }
 
 export function toWeekEmbed(input: string): string | null {
@@ -126,6 +128,11 @@ export function hoursByCategory(events: CalendarEvent[], now = new Date()) {
 }
 
 function materialize(events: CalendarEvent[], rangeStart: Date, rangeEnd: Date) {
+  const overridden = new Set(
+    events
+      .filter((event) => event.uid && event.recurrenceId)
+      .map((event) => occurrenceKey(event.uid as string, event.recurrenceId as Date)),
+  );
   const out: CalendarEvent[] = [];
   for (const event of events) {
     if (!event.rrule) {
@@ -140,7 +147,8 @@ function materialize(events: CalendarEvent[], rangeStart: Date, rangeEnd: Date) 
         const start = new Date(cursor);
         start.setHours(event.start.getHours(), event.start.getMinutes(), event.start.getSeconds(), 0);
         const skipped = event.exdates.some((day) => sameDay(day, start));
-        if (!skipped && start >= event.start && start < rangeEnd && start >= rangeStart) {
+        const replaced = Boolean(event.uid && overridden.has(occurrenceKey(event.uid, start)));
+        if (!skipped && !replaced && start >= event.start && start < rangeEnd && start >= rangeStart) {
           out.push({ ...event, start, end: new Date(start.getTime() + duration), recurring: true });
         }
       }
@@ -148,6 +156,10 @@ function materialize(events: CalendarEvent[], rangeStart: Date, rangeEnd: Date) 
     }
   }
   return out;
+}
+
+function occurrenceKey(uid: string, date: Date) {
+  return `${uid}|${date.getTime()}`;
 }
 
 function ruleMatchesDay(day: Date, event: CalendarEvent) {
@@ -208,14 +220,17 @@ export function parseIcs(raw: string): CalendarEvent[] {
     if (/VALUE=DATE(;|$)/.test(startLine) && !startLine.includes("T")) continue;
     const rrule = unfoldValue(body, "RRULE");
     const color = readColor(body);
+    const recurrenceId = parseIcsDate(fieldLine(body, "RECURRENCE-ID"));
     events.push({
       title,
       start,
       end,
       rrule,
-      recurring: Boolean(rrule) || Boolean(fieldLine(body, "RECURRENCE-ID")),
+      recurring: Boolean(rrule) || Boolean(recurrenceId),
       color,
       exdates: exdatesIn(body),
+      uid: unfoldValue(body, "UID"),
+      recurrenceId,
     });
   }
 
