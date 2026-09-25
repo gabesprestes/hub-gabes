@@ -3,8 +3,7 @@ import { hoursByCategory, parseIcs, weekKey } from "../src/lib/calendar.ts";
 
 const url = calendarUrl(process.env.ICAL_URL ?? "");
 if (!url) {
-  console.error("ICAL_URL ainda não está configurado com o endereço que termina em basic.ics.");
-  process.exit(1);
+  fail("ICAL_URL ainda não está configurado com o endereço que termina em basic.ics.");
 }
 
 let text = "";
@@ -18,13 +17,11 @@ try {
   });
   text = await response.text();
   if (!response.ok || !text.includes("BEGIN:VCALENDAR")) {
-    console.error(`Não foi possível ler a agenda (resposta ${response.status}).`);
-    process.exit(1);
+    fail(`Não foi possível ler a agenda (resposta ${response.status}).`);
   }
 } catch (error) {
   const message = error instanceof Error ? error.message : "erro ao ler a agenda";
-  console.error(message.replace(url, "agenda"));
-  process.exit(1);
+  fail(message.replace(url, "agenda"));
 }
 
 const result = hoursByCategory(parseIcs(text));
@@ -58,6 +55,12 @@ writeFileSync("public/hours.json", `${JSON.stringify(payload, null, 2)}\n`);
 console.log(
   `Semana ${payload.weekStart}: 1:1 ${payload.oneOnOne}h, projetos ${payload.projetos}h, focus ${payload.focus}h`,
 );
+
+function fail(message: string): never {
+  console.error(message);
+  if (process.env.GITHUB_ACTIONS) console.log(`::error::${message.replaceAll("\n", " ")}`);
+  process.exit(1);
+}
 
 function round(hours: number) {
   return Math.round(hours * 100) / 100;
