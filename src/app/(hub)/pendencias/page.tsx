@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCollection } from "@/hooks/use-collection";
 import { uid } from "@/lib/schema";
 import {
@@ -40,15 +40,15 @@ export default function PendenciasPage() {
   const late = visible.filter((item) => isLate(item)).length;
 
   function add(categoria: PendenciaCategoria) {
-    void save([
-      ...data,
+    void save((items) => [
+      ...items,
       { id: uid(), text: "", status: "pending", due: "", doneAt: "", priority: "media", categoria },
     ]);
   }
 
   function patch(id: string, next: Partial<Pendencia>) {
-    void save(
-      data.map((item) => {
+    void save((items) =>
+      items.map((item) => {
         if (item.id !== id) return item;
         const status = next.status ?? item.status;
         return { ...item, ...next, doneAt: status === "done" ? item.doneAt || today() : "" };
@@ -57,7 +57,7 @@ export default function PendenciasPage() {
   }
 
   function remove(id: string) {
-    void save(data.filter((item) => item.id !== id));
+    void save((items) => items.filter((item) => item.id !== id));
   }
 
   return (
@@ -105,12 +105,7 @@ export default function PendenciasPage() {
                         Atrasada
                       </span>
                     ) : null}
-                    <input
-                      value={item.text}
-                      onChange={(e) => patch(item.id, { text: e.target.value })}
-                      placeholder="Nome da atividade"
-                      className="h-7 min-w-0 flex-1 bg-transparent text-[13px] outline-none"
-                    />
+                    <ActivityName value={item.text} onCommit={(text) => patch(item.id, { text })} />
                     <select
                       value={item.status}
                       onChange={(e) => patch(item.id, { status: e.target.value as PendenciaStatus })}
@@ -145,6 +140,26 @@ export default function PendenciasPage() {
         );
       })}
     </div>
+  );
+}
+
+function ActivityName({ value, onCommit }: { value: string; onCommit: (text: string) => void }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  return (
+    <input
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        if (draft !== value) onCommit(draft);
+      }}
+      placeholder="Nome da atividade"
+      className="h-7 min-w-0 flex-1 bg-transparent text-[13px] outline-none"
+    />
   );
 }
 

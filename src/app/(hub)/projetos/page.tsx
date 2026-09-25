@@ -159,17 +159,15 @@ export default function ProjetosPage() {
               {entregas.data.map((item) => (
                 <tr key={item.id} className="border-t border-[var(--border)]">
                   <td className="px-2 py-0.5">
-                    <input
+                    <EntregaName
                       value={item.description}
-                      onChange={(e) => void patchEntrega(entregas.data, item.id, { description: e.target.value }, entregas.save)}
-                      placeholder="Entrega"
-                      className="h-8 w-full bg-transparent px-1 text-[13px] outline-none"
+                      onCommit={(description) => void patchEntrega(item.id, { description }, entregas.save)}
                     />
                   </td>
                   <td className="px-2 py-0.5">
                     <FrequencySelect
                       value={item.frequencia}
-                      onChange={(frequencia) => void patchEntrega(entregas.data, item.id, { frequencia }, entregas.save)}
+                      onChange={(frequencia) => void patchEntrega(item.id, { frequencia }, entregas.save)}
                     />
                   </td>
                   {MONTHS.map((month) => (
@@ -179,7 +177,6 @@ export default function ProjetosPage() {
                         checked={Boolean(item.checks[month.key])}
                         onChange={(e) =>
                           void patchEntrega(
-                            entregas.data,
                             item.id,
                             { checks: { ...item.checks, [month.key]: e.target.checked } },
                             entregas.save,
@@ -425,11 +422,30 @@ function updateCard(
   return save(cards.map((card) => (card.id === id ? { ...card, ...patch } : card)));
 }
 
+function EntregaName({ value, onCommit }: { value: string; onCommit: (text: string) => void }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  return (
+    <input
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        if (draft !== value) onCommit(draft);
+      }}
+      placeholder="Entrega"
+      className="h-8 w-full bg-transparent px-1 text-[13px] outline-none"
+    />
+  );
+}
+
 function patchEntrega(
-  items: Entrega[],
   id: string,
   patch: Partial<Entrega>,
-  save: (next: Entrega[]) => Promise<void>,
+  save: (next: Entrega[] | ((current: Entrega[]) => Entrega[])) => Promise<void>,
 ) {
-  return save(items.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  return save((items) => items.map((item) => (item.id === id ? { ...item, ...patch } : item)));
 }

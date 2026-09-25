@@ -32,22 +32,27 @@ export function useCollection<K extends CollectionName>(name: K) {
   }, [reload]);
 
   const save = useCallback(
-    async (next: CollectionMap[K]) => {
+    async (next: CollectionMap[K] | ((current: CollectionMap[K]) => CollectionMap[K])) => {
       if (!token) return;
       setSaving(true);
       setError(null);
-      const prev = data;
-      setData(next);
+      let previous!: CollectionMap[K];
+      let resolved!: CollectionMap[K];
+      setData((current) => {
+        previous = current;
+        resolved = typeof next === "function" ? next(current) : next;
+        return resolved;
+      });
       try {
-        await putCollection(token, name, next);
+        await putCollection(token, name, resolved);
       } catch (e) {
-        setData(prev);
+        setData(previous);
         setError(e instanceof Error ? e.message : "Erro ao salvar");
       } finally {
         setSaving(false);
       }
     },
-    [token, name, data],
+    [token, name],
   );
 
   return { data, setData, save, loading, saving, error, reload };

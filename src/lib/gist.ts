@@ -20,6 +20,7 @@ interface Gist {
 }
 
 let writeQueue: Promise<void> = Promise.resolve();
+const gistIds = new Map<string, string>();
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   const run = writeQueue.then(fn, fn);
@@ -64,12 +65,19 @@ async function loadGist(token: string, gistId: string): Promise<Gist> {
   return githubFetch<Gist>(token, `/gists/${gistId}`);
 }
 
+async function hubGistId(token: string) {
+  const cached = gistIds.get(token);
+  if (cached) return cached;
+  const gist = await ensureHubGist(token);
+  gistIds.set(token, gist.id);
+  return gist.id;
+}
+
 export async function getCollection<K extends CollectionName>(
   token: string,
   name: K,
 ): Promise<CollectionMap[K]> {
-  const gist = await ensureHubGist(token);
-  const fresh = await loadGist(token, gist.id);
+  const fresh = await loadGist(token, await hubGistId(token));
   const file = fresh.files[COLLECTION_FILES[name]];
   let content = file?.content;
   if (!content && file?.raw_url) {
@@ -87,8 +95,8 @@ export async function putCollection<K extends CollectionName>(
   data: CollectionMap[K],
 ): Promise<void> {
   return enqueue(async () => {
-    const gist = await ensureHubGist(token);
-    await githubFetch(token, `/gists/${gist.id}`, {
+    const gistId = await hubGistId(token);
+    await githubFetch(token, `/gists/${gistId}`, {
       method: "PATCH",
       body: JSON.stringify({
         files: {
