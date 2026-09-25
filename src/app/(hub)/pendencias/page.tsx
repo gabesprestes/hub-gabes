@@ -23,6 +23,15 @@ const BOX: Record<PendenciaCategoria, string> = {
 
 const PRIORITY_RANK: Record<PriorityLevel, number> = { alta: 0, media: 1, baixa: 2 };
 
+const STATUS_TONE: Record<PendenciaStatus, string> = {
+  pending: "border-[#f0b27a] bg-[#ffe4c7] text-[#c45c12]",
+  delayed: "border-[#e7a3ae] bg-[#f8d0d6] text-[#c4233c]",
+  done: "border-[#9ed4b4] bg-[#d4f0e0] text-[#1a7a4c]",
+  ongoing: "border-[#9ec4ef] bg-[#d6e8fa] text-[#1a5fad]",
+  cancelled: "border-[#d5d5da] bg-[#ececee] text-[#6e6d7a]",
+  paused: "border-[#d5d5da] bg-[#ececee] text-[#6e6d7a]",
+};
+
 export default function PendenciasPage() {
   const { data, save, error } = useCollection("pendencias");
   const [filter, setFilter] = useState<"abertas" | "todas">("abertas");
@@ -105,10 +114,12 @@ export default function PendenciasPage() {
                     <select
                       value={item.status}
                       onChange={(e) => patch(item.id, { status: e.target.value as PendenciaStatus })}
-                      className="h-7 w-[108px] shrink-0 rounded-md border border-black/10 bg-white px-1 text-[11px] outline-none"
+                      className={`h-7 w-[108px] shrink-0 rounded-md border px-1 text-[11px] font-semibold outline-none ${STATUS_TONE[item.status]}`}
                     >
                       {PENDENCIA_STATUS.map((status) => (
-                        <option key={status.key} value={status.key}>{status.label}</option>
+                        <option key={status.key} value={status.key} className={STATUS_TONE[status.key]}>
+                          {status.label}
+                        </option>
                       ))}
                     </select>
                     <input
