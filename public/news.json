@@ -1,22 +1,30 @@
 {
   "source": "g1",
-  "updatedAt": "2026-09-25T17:41:09.508Z",
+  "updatedAt": "2026-09-25T17:58:47.930Z",
   "items": [
     {
-      "title": "No g1, candidatos ao Senado por SP discutem infiltração do crime organizado, anomalias nas relações entre Poderes e emendas parlamentares",
-      "link": "https://g1.globo.com/sp/sao-paulo/eleicoes/2026/noticia/2026/09/25/no-g1-candidatos-ao-senado-por-sp-discutem-infiltracao-do-crime-organizado-anomalias-nas-relacoes-entre-poderes-e-emendas-parlamentares.ghtml"
+      "title": "Caso Master: Conselho do MPF tem 3 votos para manter Gonet à frente do caso; ASSISTA",
+      "link": "https://g1.globo.com/politica/ao-vivo/conselho-do-mpf-gonet-caso-master.ghtml",
+      "image": "https://s2-g1.glbimg.com/9O9GidpCSvqzplmY82HbwlV8hB8=/i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2026/n/A/Ft96WSSZmBiXI1C9FDMA/55550077981-77d7e776f0-k-1-.jpg",
+      "theme": "Política"
     },
     {
-      "title": "Caso Master: Conselho do MPF tem 3 votos para manter Gonet à frente do caso; sessão está no intervalo",
-      "link": "https://g1.globo.com/politica/ao-vivo/conselho-do-mpf-gonet-caso-master.ghtml"
+      "title": "Fachin manda PGR analisar pedidos pendentes em investigações sobre Master e INSS",
+      "link": "https://g1.globo.com/politica/noticia/2026/09/25/fachin-manda-pgr-analisar-pedidos-pendentes-em-investigacoes-sobre-master-e-inss.ghtml",
+      "image": "https://s2-g1.glbimg.com/IFpkC_hQ0ZoWmgddrmlS5yWMk8M=/i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2026/R/D/YZzw2wQGArVKiQJ3j5KA/55529050602-c84ab877b5-k.jpg",
+      "theme": "Política"
     },
     {
       "title": "Xi Jinping encerra visita de Estado aos EUA após encontros com Trump; saiba como foi",
-      "link": "https://g1.globo.com/mundo/ao-vivo/trump-e-xi-jinping-se-reunem-nos-eua.ghtml"
+      "link": "https://g1.globo.com/mundo/ao-vivo/trump-e-xi-jinping-se-reunem-nos-eua.ghtml",
+      "image": "https://s2-g1.glbimg.com/pIcrt831FTyU1bvMUnf3yOjJjlg=/i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2026/r/I/SUb543THS6Vk9MLOKzXg/2026-09-25t151053z-416155155-rc2fqna8ve22-rtrmadp-3-usa-china.jpg",
+      "theme": "Economia"
     },
     {
       "title": "Rússia não está se preparando para uma guerra com a Europa, diz Putin",
-      "link": "https://g1.globo.com/mundo/noticia/2026/09/25/russia-nao-esta-se-preparando-para-uma-guerra-com-a-europa-diz-putin.ghtml"
+      "link": "https://g1.globo.com/mundo/noticia/2026/09/25/russia-nao-esta-se-preparando-para-uma-guerra-com-a-europa-diz-putin.ghtml",
+      "image": "https://s2-g1.glbimg.com/m0XHR6RRUayXMwZmy1dunsOif5E=/i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2026/F/6/TEynl0SSC6oeLzVxbk4Q/2026-09-25t161450z-794982449-rc2fqnakn8s0-rtrmadp-3-russia-putin.jpg",
+      "theme": "Mundo"
     }
   ]
 }

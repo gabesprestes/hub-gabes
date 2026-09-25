@@ -1,9 +1,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const FEEDS = [
-  { url: "https://g1.globo.com/rss/g1/politica/", take: 2 },
-  { url: "https://g1.globo.com/rss/g1/economia/", take: 1 },
-  { url: "https://g1.globo.com/rss/g1/mundo/", take: 1 },
+  { url: "https://g1.globo.com/rss/g1/politica/", take: 2, theme: "Política" },
+  { url: "https://g1.globo.com/rss/g1/economia/", take: 1, theme: "Economia" },
+  { url: "https://g1.globo.com/rss/g1/mundo/", take: 1, theme: "Mundo" },
 ];
 
 const items = await headlines();
@@ -15,14 +15,14 @@ const payload = {
   items,
 };
 
-let previous: { items?: { title?: string; link?: string }[] } = {};
+let previous: { items?: { title?: string; link?: string; image?: string; theme?: string }[] } = {};
 try {
   previous = JSON.parse(readFileSync("public/news.json", "utf8"));
 } catch {
   previous = {};
 }
-const before = (previous.items ?? []).map((item) => `${item.link}|${item.title}`).join("\n");
-const after = items.map((item) => `${item.link}|${item.title}`).join("\n");
+const before = (previous.items ?? []).map((item) => `${item.link}|${item.title}|${item.image ?? ""}|${item.theme ?? ""}`).join("\n");
+const after = items.map((item) => `${item.link}|${item.title}|${item.image}|${item.theme}`).join("\n");
 if (before === after) {
   console.log("Manchetes sem mudança.");
   process.exit(0);
@@ -32,7 +32,7 @@ writeFileSync("public/news.json", `${JSON.stringify(payload, null, 2)}\n`);
 console.log(items.map((item) => item.title).join("\n"));
 
 async function headlines() {
-  const found: { title: string; link: string }[] = [];
+  const found: { title: string; link: string; image: string; theme: string }[] = [];
   const seen = new Set<string>();
   let failures = 0;
   for (const feed of FEEDS) {
@@ -62,13 +62,26 @@ async function headlines() {
       if (link.includes("especial-publicitario") || /^(vídeos|videos|oportunidade)\b/i.test(title)) continue;
       if (seen.has(link)) continue;
       seen.add(link);
-      found.push({ title, link });
+      found.push({ title, link, image: imageOf(block), theme: feed.theme });
       taken += 1;
       if (taken === feed.take) break;
     }
   }
   if (failures === FEEDS.length) fail("Não foi possível ler o G1.");
   return found;
+}
+
+function imageOf(block: string) {
+  const media = block.match(/<media:content\b[^>]*\burl="([^"]+)"/i)?.[1];
+  const img = media || block.match(/<img\b[^>]*\bsrc="([^"]+)"/i)?.[1] || "";
+  if (!img.startsWith("https://")) return "";
+  try {
+    const host = new URL(img).hostname;
+    if (host.endsWith("glbimg.com") || host.endsWith("globo.com")) return img;
+  } catch {
+    return "";
+  }
+  return "";
 }
 
 function tag(block: string, name: string) {

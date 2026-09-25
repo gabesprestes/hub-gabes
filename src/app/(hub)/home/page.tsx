@@ -10,7 +10,7 @@ import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
 const PER_COLUMN = 5;
 const NEWS_URL = "https://raw.githubusercontent.com/gabesprestes/hub-gabes/master/public/news.json";
 
-type Headline = { title: string; link: string };
+type Headline = { title: string; link: string; image?: string; theme?: string };
 
 export default function AgendaHomePage() {
   const { data, save, loading, saving, error } = useCollection("agenda");
@@ -142,8 +142,8 @@ function G1News() {
   }, []);
 
   return (
-    <section className="mt-4 rounded-2xl border border-[#e4c8f5] bg-white px-4 py-3">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
+    <section className="mt-4">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
         <h2 className="m-0 text-[15px] font-bold">G1 hoje</h2>
         <a
           href="https://g1.globo.com/"
@@ -155,20 +155,27 @@ function G1News() {
         </a>
       </div>
       {items ? (
-        <ul className="m-0 grid list-none gap-2 p-0">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {items.map((item) => (
-            <li key={item.link}>
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[13px] font-medium leading-snug text-[var(--text)] hover:text-[var(--purple)]"
-              >
-                {item.title}
-              </a>
-            </li>
+            <a
+              key={item.link}
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="overflow-hidden rounded-2xl border border-[#e4c8f5] bg-white hover:border-[var(--purple-light)]"
+            >
+              {item.image ? (
+                <img src={item.image} alt="" className="h-28 w-full object-cover" />
+              ) : (
+                <div className="h-28 bg-[#f3e8fb]" />
+              )}
+              <div className="px-4 py-3">
+                <div className="text-[12px] font-medium text-[#b06ad4]">{item.theme || themeFromLink(item.link)}</div>
+                <div className="mt-1 line-clamp-3 text-[14px] font-medium leading-snug">{item.title}</div>
+              </div>
+            </a>
           ))}
-        </ul>
+        </div>
       ) : (
         <p className="m-0 text-[13px] text-[var(--muted)]">
           {failed ? "As manchetes do G1 não carregaram agora." : "Carregando manchetes…"}
@@ -178,6 +185,24 @@ function G1News() {
   );
 }
 
+function safeImage(value: unknown) {
+  if (typeof value !== "string" || !value.startsWith("https://")) return "";
+  try {
+    const host = new URL(value).hostname;
+    if (host.endsWith("glbimg.com") || host.endsWith("globo.com")) return value;
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function themeFromLink(link: string) {
+  if (link.includes("/politica/")) return "Política";
+  if (link.includes("/economia/")) return "Economia";
+  if (link.includes("/mundo/")) return "Mundo";
+  return "G1";
+}
+
 async function loadHeadlines(): Promise<Headline[] | null> {
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   for (const url of [`${NEWS_URL}?t=${Date.now()}`, `${base}/news.json?t=${Date.now()}`]) {
@@ -185,14 +210,13 @@ async function loadHeadlines(): Promise<Headline[] | null> {
       const response = await fetch(url);
       if (!response.ok) continue;
       const json = (await response.json()) as { items?: Headline[] };
-      const items = (json.items ?? []).filter(
-        (item) =>
-          Boolean(item) &&
-          typeof item.title === "string" &&
-          item.title.length > 0 &&
-          typeof item.link === "string" &&
-          item.link.startsWith("https://g1.globo.com/"),
-      );
+      const items = (json.items ?? []).flatMap((item) => {
+        if (!item || typeof item.title !== "string" || !item.title) return [];
+        if (typeof item.link !== "string" || !item.link.startsWith("https://g1.globo.com/")) return [];
+        const image = safeImage(item.image);
+        const theme = typeof item.theme === "string" ? item.theme : "";
+        return [{ title: item.title, link: item.link, image, theme }];
+      });
       if (items.length > 0) return items.slice(0, 4);
     } catch {
       // The next address may still have the headlines.
