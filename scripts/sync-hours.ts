@@ -1,23 +1,30 @@
 import { writeFileSync } from "node:fs";
-import { hoursByCategory, parseIcs, weekKey } from "../src/lib/calendar";
+import { hoursByCategory, parseIcs, weekKey } from "../src/lib/calendar.ts";
 
-const url = process.env.ICAL_URL?.trim();
+const url = calendarUrl(process.env.ICAL_URL ?? "");
 if (!url) {
-  console.log("ICAL_URL ainda não está configurado.");
-  process.exit(0);
+  console.error("ICAL_URL ainda não está configurado com o endereço que termina em basic.ics.");
+  process.exit(1);
 }
 
 let text = "";
 try {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    redirect: "follow",
+    headers: {
+      Accept: "text/calendar, text/plain, */*",
+      "User-Agent": "HubGabes/1.0",
+    },
+  });
   text = await response.text();
   if (!response.ok || !text.includes("BEGIN:VCALENDAR")) {
-    console.error("Não foi possível ler a agenda.");
-    process.exit(0);
+    console.error(`Não foi possível ler a agenda (resposta ${response.status}).`);
+    process.exit(1);
   }
-} catch {
-  console.error("Não foi possível ler a agenda.");
-  process.exit(0);
+} catch (error) {
+  const message = error instanceof Error ? error.message : "erro ao ler a agenda";
+  console.error(message.replace(url, "agenda"));
+  process.exit(1);
 }
 
 const result = hoursByCategory(parseIcs(text));
@@ -37,4 +44,10 @@ console.log(
 
 function round(hours: number) {
   return Math.round(hours * 100) / 100;
+}
+
+function calendarUrl(raw: string) {
+  const match = raw.match(/https:\/\/calendar\.google\.com\/calendar\/ical\/\S+/i);
+  const found = (match?.[0] ?? raw).trim().replace(/^["']|["']$/g, "").replace(/&amp;/g, "&");
+  return found.replace(/["'<>].*$/, "").trim();
 }
