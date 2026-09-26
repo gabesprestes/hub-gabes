@@ -36,7 +36,7 @@ export default function LinksPage() {
       id: uid(),
       ...item,
     }));
-    if (missing.length > 0) void save([...data, ...missing]);
+    if (missing.length > 0) void save((items) => [...items, ...missing]);
   }, [loading, data, save]);
 
   const q = query.trim().toLowerCase();
@@ -82,16 +82,15 @@ export default function LinksPage() {
     if (!/^https?:\/\//i.test(u)) u = "https://" + u;
     const nextNote = note.trim();
     if (editing) {
-      await save(
-        data.map((x) =>
-          x.id === editing.id
-            ? { ...x, label: l, url: u, categoria, note: nextNote || undefined }
-            : x,
+      const id = editing.id;
+      await save((items) =>
+        items.map((x) =>
+          x.id === id ? { ...x, label: l, url: u, categoria, note: nextNote || undefined } : x,
         ),
       );
     } else {
-      await save([
-        ...data,
+      await save((items) => [
+        ...items,
         { id: uid(), label: l, url: u, categoria, note: nextNote || undefined },
       ]);
     }
@@ -100,7 +99,7 @@ export default function LinksPage() {
 
   async function remove(id: string) {
     if (!confirm("Excluir este link?")) return;
-    await save(data.filter((x) => x.id !== id));
+    await save((items) => items.filter((x) => x.id !== id));
   }
 
   return (

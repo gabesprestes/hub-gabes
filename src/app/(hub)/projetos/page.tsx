@@ -42,8 +42,8 @@ export default function ProjetosPage() {
   async function addCard() {
     const title = form.title.trim();
     if (!title) return;
-    await board.save([
-      ...board.data,
+    await board.save((cards) => [
+      ...cards,
       {
         id: uid(),
         title,
@@ -62,8 +62,8 @@ export default function ProjetosPage() {
   }
 
   async function move(id: string, column: BoardColumn) {
-    await board.save(
-      board.data.map((card) => {
+    await board.save((cards) =>
+      cards.map((card) => {
         if (card.id !== id) return card;
         return { ...card, column, doneAt: column === "concluido" ? card.doneAt || todayLabel() : "" };
       }),
@@ -117,8 +117,8 @@ export default function ProjetosPage() {
                     card={card}
                     border={style.border}
                     onDragStart={() => setDragging(card.id)}
-                    onPatch={(patch) => updateCard(board.data, card.id, patch, board.save)}
-                    onDelete={() => void board.save(board.data.filter((item) => item.id !== card.id))}
+                    onPatch={(patch) => updateCard(card.id, patch, board.save)}
+                    onDelete={() => void board.save((cards) => cards.filter((item) => item.id !== card.id))}
                   />
                 ))}
                 {cards.length === 0 ? <Empty>Solte um card aqui.</Empty> : null}
@@ -134,8 +134,8 @@ export default function ProjetosPage() {
           <button
             type="button"
             onClick={() =>
-              void entregas.save([
-                ...entregas.data,
+              void entregas.save((items) => [
+                ...items,
                 { id: uid(), description: "", frequencia: "", checks: emptyChecks() },
               ])
             }
@@ -414,12 +414,11 @@ function formatDate(iso: string) {
 }
 
 function updateCard(
-  cards: BoardCard[],
   id: string,
   patch: Partial<BoardCard>,
-  save: (next: BoardCard[]) => Promise<void>,
+  save: (next: BoardCard[] | ((current: BoardCard[]) => BoardCard[])) => Promise<void>,
 ) {
-  return save(cards.map((card) => (card.id === id ? { ...card, ...patch } : card)));
+  return save((cards) => cards.map((card) => (card.id === id ? { ...card, ...patch } : card)));
 }
 
 function EntregaName({ value, onCommit }: { value: string; onCommit: (text: string) => void }) {

@@ -13,19 +13,22 @@ export function useCollection<K extends CollectionName>(name: K) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dataRef = useRef(data);
+  const revision = useRef(0);
 
   const reload = useCallback(async () => {
     if (!token) return;
+    const seen = revision.current;
     setLoading(true);
     setError(null);
     try {
       const value = await getCollection(token, name);
+      if (seen !== revision.current) return;
       dataRef.current = value;
       setData(value);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar");
     } finally {
-      setLoading(false);
+      if (seen === revision.current) setLoading(false);
     }
   }, [token, name]);
 
@@ -38,6 +41,7 @@ export function useCollection<K extends CollectionName>(name: K) {
       if (!token) return;
       setSaving(true);
       setError(null);
+      const revisionAtSave = ++revision.current;
       const previous = dataRef.current;
       const resolved = typeof next === "function" ? next(previous) : next;
       dataRef.current = resolved;
@@ -45,8 +49,10 @@ export function useCollection<K extends CollectionName>(name: K) {
       try {
         await putCollection(token, name, resolved);
       } catch (e) {
-        dataRef.current = previous;
-        setData(previous);
+        if (revision.current === revisionAtSave) {
+          dataRef.current = previous;
+          setData(previous);
+        }
         setError(e instanceof Error ? e.message : "Erro ao salvar");
       } finally {
         setSaving(false);

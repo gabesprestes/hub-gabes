@@ -21,8 +21,6 @@ const BOX: Record<PendenciaCategoria, string> = {
   pessoal: "bg-[#fff6d6]",
 };
 
-const PRIORITY_RANK: Record<PriorityLevel, number> = { alta: 0, media: 1, baixa: 2 };
-
 const STATUS_TONE: Record<PendenciaStatus, string> = {
   pending: "border-[#f0b27a] bg-[#ffe4c7] text-[#c45c12]",
   delayed: "border-[#e7a3ae] bg-[#f8d0d6] text-[#c4233c]",
@@ -78,9 +76,7 @@ export default function PendenciasPage() {
       {error ? <p className="mb-3 text-sm text-[var(--red)]">{error}</p> : null}
 
       {PENDENCIA_CATEGORIAS.map((categoria) => {
-        const items = visible
-          .filter((item) => item.categoria === categoria.key)
-          .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+        const items = visible.filter((item) => item.categoria === categoria.key);
         return (
           <section key={categoria.key} className={`mb-5 rounded-2xl p-3 ${BOX[categoria.key]}`}>
             <div className="mb-2 flex items-center justify-between px-1">

@@ -33,7 +33,7 @@ export default function AgendaHomePage() {
       return;
     }
     setFormError(null);
-    await save({ ...data, embedUrl: nextEmbed ?? "" });
+    await save((current) => ({ ...current, embedUrl: nextEmbed ?? "" }));
     setShowSetup(false);
   }
 
@@ -118,7 +118,7 @@ export default function AgendaHomePage() {
       </div>
       <ReminderColumn
         reminders={data.reminders ?? []}
-        onSave={(reminders) => void save({ ...data, reminders })}
+        onSave={(reminders) => void save((current) => ({ ...current, reminders }))}
       />
       </div>
     </div>

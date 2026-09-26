@@ -103,7 +103,7 @@ export function Sidebar() {
       ctx.drawImage(image, (size - w) / 2, (size - h) / 2, w, h);
       const photo = canvas.toDataURL("image/jpeg", 0.85);
       URL.revokeObjectURL(url);
-      void save({ ...data, photo });
+      void save((current) => ({ ...current, photo }));
     };
     image.src = url;
   }
