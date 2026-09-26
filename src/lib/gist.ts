@@ -96,12 +96,14 @@ export async function putCollection<K extends CollectionName>(
 ): Promise<void> {
   return enqueue(async () => {
     const gistId = await hubGistId(token);
+    const content = JSON.stringify(data, null, 2);
+    if (!content) throw new Error("Não havia conteúdo para salvar.");
     await githubFetch(token, `/gists/${gistId}`, {
       method: "PATCH",
       body: JSON.stringify({
         files: {
           [COLLECTION_FILES[name]]: {
-            content: JSON.stringify(data, null, 2),
+            content,
           },
           [COLLECTION_FILES.meta]: {
             content: JSON.stringify(

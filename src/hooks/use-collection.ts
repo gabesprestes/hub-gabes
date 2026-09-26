@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { getCollection, putCollection } from "@/lib/gist";
 import { emptyCollections } from "@/lib/schema";
@@ -12,6 +12,7 @@ export function useCollection<K extends CollectionName>(name: K) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dataRef = useRef(data);
 
   const reload = useCallback(async () => {
     if (!token) return;
@@ -19,6 +20,7 @@ export function useCollection<K extends CollectionName>(name: K) {
     setError(null);
     try {
       const value = await getCollection(token, name);
+      dataRef.current = value;
       setData(value);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar");
@@ -36,16 +38,14 @@ export function useCollection<K extends CollectionName>(name: K) {
       if (!token) return;
       setSaving(true);
       setError(null);
-      let previous!: CollectionMap[K];
-      let resolved!: CollectionMap[K];
-      setData((current) => {
-        previous = current;
-        resolved = typeof next === "function" ? next(current) : next;
-        return resolved;
-      });
+      const previous = dataRef.current;
+      const resolved = typeof next === "function" ? next(previous) : next;
+      dataRef.current = resolved;
+      setData(resolved);
       try {
         await putCollection(token, name, resolved);
       } catch (e) {
+        dataRef.current = previous;
         setData(previous);
         setError(e instanceof Error ? e.message : "Erro ao salvar");
       } finally {
