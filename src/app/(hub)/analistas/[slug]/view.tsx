@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useCollection } from "@/hooks/use-collection";
 import { draftFeedback } from "@/lib/feedback";
 import { ANALYSTS, emptyAnalyst } from "@/lib/types";
+import { LinkMark } from "@/components/link-mark";
 import { inputClass } from "@/components/ui";
 
 export function AnalystView({ slug }: { slug: string }) {
@@ -48,21 +49,28 @@ export function AnalystView({ slug }: { slug: string }) {
       <p className="mt-1 text-[13px] text-[var(--muted)]">Acompanhamento, anotações e rascunho de feedback.</p>
       {error ? <p className="mt-3 text-sm text-[var(--red)]">{error}</p> : null}
 
-      <label className="mt-5 block text-[12px] font-semibold text-[var(--muted)]">
-        Link do acompanhamento individual
-        <input
-          value={link}
-          onChange={(e) => setLink(e.target.value)}
-          onBlur={() => commit({ link })}
-          placeholder="https://..."
-          className={inputClass + " mt-1"}
-        />
-      </label>
-      {link ? (
-        <a href={link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[13px] font-semibold text-[var(--purple)]">
-          Abrir acompanhamento
-        </a>
-      ) : null}
+      <div className="mt-5">
+        <p className="m-0 text-[12px] font-semibold text-[var(--muted)]">Link do acompanhamento individual</p>
+        {link ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-2 text-[14px] font-medium text-[var(--text)] hover:text-[var(--purple)]"
+          >
+            <LinkMark url={link} label={`Acompanhamento - ${person.name}`} />
+            Acompanhamento - {person.name}
+          </a>
+        ) : (
+          <input
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            onBlur={() => commit({ link })}
+            placeholder="Cole o link da planilha"
+            className={inputClass + " mt-1"}
+          />
+        )}
+      </div>
 
       <label className="mt-5 block text-[12px] font-semibold text-[var(--muted)]">
         Anotações sobre {person.name}
@@ -75,12 +83,12 @@ export function AnalystView({ slug }: { slug: string }) {
       </label>
 
       <label className="mt-5 block text-[12px] font-semibold text-[var(--muted)]">
-        Menções e trechos de conversa
+        Trocas ao longo do mês
         <textarea
           value={mentions}
           onChange={(e) => setMentions(e.target.value)}
           onBlur={() => commit({ mentions })}
-          placeholder="Cole aqui falas, 1:1 e observações. Uma por linha."
+          placeholder="Cole aqui transcripts de reuniões, 1:1s, observações"
           className={inputClass + " mt-1 min-h-28"}
         />
       </label>
