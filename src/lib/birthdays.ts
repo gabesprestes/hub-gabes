@@ -1,25 +1,42 @@
-export const BIRTHDAYS = [
-  { name: "Mayara Kin", month: 1, day: 8 },
-  { name: "Luciana Ramos", month: 2, day: 12 },
-  { name: "Evelyn Marconi", month: 2, day: 14 },
-  { name: "Francilene Santos", month: 3, day: 2 },
-  { name: "Livia Lyra", month: 5, day: 16 },
-  { name: "Matheus Santos", month: 6, day: 20 },
-  { name: "Mariana Dilello", month: 10, day: 6 },
-  { name: "Alan Clovis", month: 11, day: 13 },
-];
-
 export function birthdayReminderText(name: string) {
   return `Hoje é o aniversário de: ${name}!`;
 }
 
-export function birthdaysOn(date = new Date()) {
+export const BIRTHDAYS = [
+  { month: 1, day: 8, text: birthdayReminderText("Mayara Kin") },
+  { month: 2, day: 12, text: birthdayReminderText("Luciana Ramos") },
+  { month: 2, day: 14, text: birthdayReminderText("Evelyn Marconi") },
+  { month: 3, day: 2, text: birthdayReminderText("Francilene Santos") },
+  { month: 5, day: 16, text: birthdayReminderText("Livia Lyra") },
+  { month: 6, day: 17, text: "Feliz aniversário, Gabrielle!" },
+  { month: 6, day: 20, text: birthdayReminderText("Matheus Santos") },
+  { month: 10, day: 6, text: birthdayReminderText("Mariana Dilello") },
+  { month: 11, day: 13, text: birthdayReminderText("Alan Clovis") },
+];
+
+const PREVIEW = {
+  year: 2026,
+  month: 9,
+  day: 29,
+  text: birthdayReminderText("Mayara Kin"),
+};
+
+function saoPauloDate(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo",
+    year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(date);
-  const month = Number(parts.find((part) => part.type === "month")?.value);
-  const day = Number(parts.find((part) => part.type === "day")?.value);
-  return BIRTHDAYS.filter((item) => item.month === month && item.day === day).map((item) => item.name);
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value);
+  return { year: value("year"), month: value("month"), day: value("day") };
+}
+
+export function birthdayTextsOn(date = new Date()) {
+  const today = saoPauloDate(date);
+  const texts = BIRTHDAYS.filter((item) => item.month === today.month && item.day === today.day).map((item) => item.text);
+  if (today.year === PREVIEW.year && today.month === PREVIEW.month && today.day === PREVIEW.day) {
+    texts.unshift(PREVIEW.text);
+  }
+  return texts;
 }

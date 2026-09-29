@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Reminder } from "@/lib/types";
 import { useCollection } from "@/hooks/use-collection";
-import { birthdayReminderText, birthdaysOn } from "@/lib/birthdays";
+import { birthdayTextsOn } from "@/lib/birthdays";
 import { toWeekEmbed } from "@/lib/calendar";
 import { uid } from "@/lib/schema";
 import { Field, GhostButton, PrimaryButton, inputClass } from "@/components/ui";
@@ -29,18 +29,18 @@ export default function AgendaHomePage() {
 
   useEffect(() => {
     if (loading || error) return;
-    const names = birthdaysOn();
-    if (names.length === 0) return;
+    const texts = birthdayTextsOn();
+    if (texts.length === 0) return;
     void save((current) => {
       const reminders = current.reminders ?? [];
-      const missing = names.filter((name) => !reminders.some((item) => item.text === birthdayReminderText(name)));
+      const missing = texts.filter((text) => !reminders.some((item) => item.text === text));
       if (missing.length === 0) return current;
       return {
         ...current,
         reminders: [
-          ...missing.map((name) => ({
+          ...missing.map((text) => ({
             id: uid(),
-            text: birthdayReminderText(name),
+            text,
             updatedAt: new Date().toISOString(),
           })),
           ...reminders,
