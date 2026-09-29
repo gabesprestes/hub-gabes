@@ -39,11 +39,12 @@ export function useCollection<K extends CollectionName>(name: K) {
   const save = useCallback(
     async (next: CollectionMap[K] | ((current: CollectionMap[K]) => CollectionMap[K])) => {
       if (!token) return;
+      const previous = dataRef.current;
+      const resolved = typeof next === "function" ? next(previous) : next;
+      if (resolved === previous) return;
       setSaving(true);
       setError(null);
       const revisionAtSave = ++revision.current;
-      const previous = dataRef.current;
-      const resolved = typeof next === "function" ? next(previous) : next;
       dataRef.current = resolved;
       setData(resolved);
       try {
