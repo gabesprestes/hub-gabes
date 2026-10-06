@@ -10,6 +10,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const home = pathname.startsWith("/home");
+  const wide = home || pathname.startsWith("/analistas");
 
   useEffect(() => {
     if (ready && !token) router.replace("/login/");
@@ -26,7 +27,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className={home ? "min-w-0 flex-1 px-5 py-7" : "min-w-0 flex-1 max-w-[1400px] px-8 py-7"}>{children}</main>
+      <main className={wide ? "min-w-0 flex-1 px-5 py-7" : "min-w-0 flex-1 max-w-[1400px] px-8 py-7"}>{children}</main>
     </div>
   );
 }
