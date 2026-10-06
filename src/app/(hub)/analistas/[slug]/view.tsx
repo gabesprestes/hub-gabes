@@ -51,21 +51,21 @@ export function AnalystView({ slug }: { slug: string }) {
 
       <div className="mt-5">
         <p className="m-0 text-[12px] font-semibold text-[var(--muted)]">Link do acompanhamento individual</p>
-        {link ? (
+        {note.link ? (
           <a
-            href={link}
+            href={note.link}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-2 text-[14px] font-medium text-[var(--text)] hover:text-[var(--purple)]"
           >
-            <LinkMark url={link} label={`Acompanhamento - ${person.name}`} />
+            <LinkMark url={note.link} label={`Acompanhamento - ${person.name}`} />
             Acompanhamento - {person.name}
           </a>
         ) : (
           <input
             value={link}
             onChange={(e) => setLink(e.target.value)}
-            onBlur={() => commit({ link })}
+            onBlur={(e) => commit({ link: e.target.value.trim() })}
             placeholder="Cole o link da planilha"
             className={inputClass + " mt-1"}
           />
